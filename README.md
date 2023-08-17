@@ -2,10 +2,14 @@
 
 ### Info
 
-This repository is playground for the debezium software.
+This repository is playground for the debezium-kafka-postgresql.
 
-Tutorial: https://debezium.io/documentation/reference/stable/tutorial.html
-Postgres connector config: https://debezium.io/documentation/reference/stable/connectors/postgresql.html#postgresql-example-configuration
+Read the following:
+
+1. Tutorial: https://debezium.io/documentation/reference/stable/tutorial.html
+2. Postgres connector config: https://debezium.io/documentation/reference/stable/connectors/postgresql.html#postgresql-example-configuration
+3. Avro serialization: https://debezium.io/documentation/reference/stable/configuration/avro.html
+4. Examples: https://github.com/debezium/debezium-examples
 
 ### 1. Set up
 
@@ -36,6 +40,7 @@ curl -i -X GET -H "Accept:application/json" localhost:58083/connectors/inventory
 ```
 
 You should see something like the following
+
 ```text
 HTTP/1.1 200 OK
 Date: Thu, 06 Feb 2020 22:12:03 GMT
@@ -56,12 +61,14 @@ Server: Jetty(9.4.20.v20190813)
 ```
 
 ### 5. kafka-ui
+
 kafka-ui dashboard: http://localhost:58000/
 
 ### 6. debezium-ui
+
 debezium-ui dashboard: http://localhost:58001/
 
-### Shut down
+### 7. Shut down
 
 ```shell
 docker compose down -v
