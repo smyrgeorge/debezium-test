@@ -27,6 +27,20 @@ curl -i -X POST \
   -d @register-postgres.json
 ```
 
+Alternatively, you can use the avro connector.
+This connector uses the `Apicurio` schema registry.
+
+**Firstly you need to create the `apicurio` schema in the database (see [7. Apicurio schema registry](#7-apicurio-schema-registry))**
+
+Attach the connector with:
+```shell
+curl -i -X POST \
+  -H "Accept:application/json" \
+  -H  "Content-Type:application/json" \
+  http://localhost:58083/connectors/ \
+  -d @register-postgres-avro.json
+```
+
 ### 3. Verify that `inventory-connector` is registered
 
 ```shell
