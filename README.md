@@ -68,7 +68,19 @@ kafka-ui dashboard: http://localhost:58000/
 
 debezium-ui dashboard: http://localhost:58001/
 
-### 7. Shut down
+### 7. Apicurio schema registry
+
+The registry is not going to start up.
+First, we need to create a schema with name `apicurio` under the `postgres` database.
+Then just restart the service using:
+```shell
+docker compose start apicurio
+```
+
+
+apicurio-ui dashboard: http://localhost:58002/
+
+### Shut down
 
 ```shell
 docker compose down -v
