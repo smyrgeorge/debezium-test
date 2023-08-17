@@ -9,7 +9,8 @@ Read the following:
 1. Tutorial: https://debezium.io/documentation/reference/stable/tutorial.html
 2. Postgres connector config: https://debezium.io/documentation/reference/stable/connectors/postgresql.html#postgresql-example-configuration
 3. Avro serialization: https://debezium.io/documentation/reference/stable/configuration/avro.html
-4. Examples: https://github.com/debezium/debezium-examples
+4. Apicurio schema registry: https://www.apicur.io/registry/docs/apicurio-registry/2.4.x/index.html
+5. Examples: https://github.com/debezium/debezium-examples
 
 ### 1. Set up
 
@@ -30,7 +31,8 @@ curl -i -X POST \
 Alternatively, you can use the avro connector.
 This connector uses the `Apicurio` schema registry.
 
-**Firstly you need to create the `apicurio` schema in the database (see [7. Apicurio schema registry](#7-apicurio-schema-registry))**
+**Firstly you need to create the `apicurio` schema in the database
+(see [7. Apicurio schema registry](#7-apicurio-schema-registry))**
 
 Attach the connector with:
 ```shell
