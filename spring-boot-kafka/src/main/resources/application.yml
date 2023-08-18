@@ -15,3 +15,4 @@ logging:
     root: INFO
     io.smyrgeorge.test: DEBUG
     org.springframework.web: INFO
+    org.apache.kafka: INFO

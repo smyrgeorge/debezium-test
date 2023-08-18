@@ -101,3 +101,19 @@ apicurio-ui dashboard: http://localhost:58002/
 ```shell
 docker compose down -v
 ```
+
+### Notes
+Connector for PostgreSQL does not create events for schema changes.
+
+#### Add column with default value
+Add column with default value should be avoided. Instead, we need to do the following:
+  1. Alter the table and add the column with null value.
+  2. Update all rows.
+  3. Alter table set not null and default value.
+  
+```sql
+alter table customers add column test text null;
+update customers set test='test';
+alter table customers alter column test set not null;
+alter table customers alter column test set default 'test';
+```

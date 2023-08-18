@@ -1,14 +1,15 @@
 package io.smyrgeorge.test.api.events
 
+import com.fasterxml.jackson.databind.JsonNode
+import io.smyrgeorge.test.util.ObjectMapperFactory
 import jakarta.annotation.PostConstruct
 import org.apache.kafka.clients.consumer.ConsumerConfig
-import org.apache.kafka.common.serialization.StringDeserializer
+import org.apache.kafka.common.serialization.Deserializer
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import reactor.core.Disposable
 import reactor.kafka.receiver.KafkaReceiver
 import reactor.kafka.receiver.ReceiverOptions
-import reactor.kafka.receiver.ReceiverPartition
 import reactor.kafka.receiver.ReceiverRecord
 import java.time.Instant
 import java.time.ZoneId
@@ -42,12 +43,13 @@ class InventoryConsumer {
         ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
         ConsumerConfig.CLIENT_ID_CONFIG to "spring-boot-kafka",
         ConsumerConfig.GROUP_ID_CONFIG to "spring-boot-kafka",
-        ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+        ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to JsonNodeDeserializer::class.java,
+        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to JsonNodeDeserializer::class.java,
         ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
     )
 
-    private val receiverOptions: ReceiverOptions<String, String> = ReceiverOptions.create(props)
+    private val receiverOptions: ReceiverOptions<JsonNode, JsonNode> =
+        ReceiverOptions.create<JsonNode, JsonNode>(props).subscription(setOf(topic))
 
     @PostConstruct
     fun setup() {
@@ -55,16 +57,8 @@ class InventoryConsumer {
     }
 
     private fun receiver(): Disposable {
-        val options = receiverOptions.subscription(setOf(topic))
-            .addAssignListener { partitions: Collection<ReceiverPartition> ->
-                log.debug("onPartitionsAssigned {}", partitions)
-            }
-            .addRevokeListener { partitions: Collection<ReceiverPartition> ->
-                log.debug("onPartitionsRevoked {}", partitions)
-            }
-
-        val kafkaFlux = KafkaReceiver.create(options).receive()
-        return kafkaFlux.subscribe { record: ReceiverRecord<String, String> ->
+        val kafkaFlux = KafkaReceiver.create(receiverOptions).receive()
+        return kafkaFlux.subscribe { record: ReceiverRecord<JsonNode, JsonNode> ->
 
             val offset = record.receiverOffset()
 
@@ -79,5 +73,14 @@ class InventoryConsumer {
 
             offset.acknowledge()
         }
+    }
+
+    class JsonNodeDeserializer : Deserializer<JsonNode> {
+
+        private val om = ObjectMapperFactory.createSnakeCase()
+
+        override fun deserialize(topic: String, data: ByteArray): JsonNode =
+            om.readTree(data)
+
     }
 }
