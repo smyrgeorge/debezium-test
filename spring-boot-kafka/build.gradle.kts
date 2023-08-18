@@ -41,8 +41,9 @@ dependencies {
     implementation("io.arrow-kt:arrow-core:1.2.0")
     implementation("io.arrow-kt:arrow-fx-coroutines:1.2.0")
 
-    // Logback encoder used to for CONSOLE_JSON appender.
-    implementation("net.logstash.logback:logstash-logback-encoder:7.4")
+    // Kafka
+    // https://github.com/reactor/reactor-kafka
+    implementation("io.projectreactor.kafka:reactor-kafka:1.3.20")
 
     // Test dependencies
     testImplementation("org.springframework.boot:spring-boot-starter-test")
