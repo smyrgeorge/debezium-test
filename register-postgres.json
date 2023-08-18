@@ -9,15 +9,6 @@
     "database.password": "postgres",
     "database.dbname": "postgres",
     "topic.prefix": "dbserver1",
-    "schema.include.list": "inventory",
-    "schema.name.adjustment.mode": "avro",
-    "key.converter": "io.apicurio.registry.utils.converter.AvroConverter",
-    "key.converter.apicurio.registry.url": "http://apicurio:8080/apis/registry/v2",
-    "key.converter.apicurio.registry.auto-register": true,
-    "key.converter.apicurio.registry.find-latest": true,
-    "value.converter": "io.apicurio.registry.utils.converter.AvroConverter",
-    "value.converter.apicurio.registry.url": "http://apicurio:8080/apis/registry/v2",
-    "value.converter.apicurio.registry.auto-register": true,
-    "value.converter.apicurio.registry.find-latest": true
+    "schema.include.list": "inventory"
   }
 }
