@@ -38,8 +38,9 @@ services:
       - ENABLE_DEBEZIUM_SCRIPTING=true
       - CONNECT_REST_EXTENSION_CLASSES=io.debezium.kcrestextension.DebeziumConnectRestExtension
       - ENABLE_APICURIO_CONVERTERS=true
+      - ENABLE_JOLOKIA=true
   apicurio:
-    image: apicurio/apicurio-registry-sql:2.4.x-release
+    image: apicurio/apicurio-registry-sql:${APICURIO_VERSION}
     ports:
       - "58002:8080"
     environment:
@@ -47,7 +48,7 @@ services:
       REGISTRY_DATASOURCE_USERNAME: postgres
       REGISTRY_DATASOURCE_PASSWORD: postgres
   kafka-ui:
-    image: provectuslabs/kafka-ui:latest
+    image: provectuslabs/kafka-ui:${KAFKA_UI_VERSION}
     ports:
       - "58000:8080"
     environment:
