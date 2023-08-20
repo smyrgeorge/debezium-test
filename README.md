@@ -117,3 +117,18 @@ update customers set test='test';
 alter table customers alter column test set not null;
 alter table customers alter column test set default 'test';
 ```
+
+#### Support for schema in json fields
+Check here: https://github.com/birdiecare/connect-smts
+Also: https://jcustenborder.github.io/kafka-connect-documentation/projects/kafka-connect-json-schema/transformations/FromJson.html
+
+#### Kafka connect plugins
+By default, the directory `/kafka/connect` is used as plugin directory by the Debezium Docker image for Kafka Connect.
+So any additional connectors you may wish to use should be added to that directory.
+
+Alternatively,
+you can add further directories to the plugin path
+by specifying the `KAFKA_CONNECT_PLUGINS_DIR` environment variable when starting the container
+(e.g. `-e KAFKA_CONNECT_PLUGINS_DIR=/kafka/connect/,/path/to/further/plugins`).
+When using the container image for Kafka Connect provided by Confluent,
+you can specify the `CONNECT_PLUGIN_PATH` environment variable to achieve the same.
