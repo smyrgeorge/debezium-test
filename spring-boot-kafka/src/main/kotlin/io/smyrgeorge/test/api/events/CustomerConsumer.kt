@@ -91,31 +91,30 @@ class CustomerConsumer {
 
         override fun deserialize(topic: String, data: ByteArray): JsonNode {
 
-            fun JsonNode.deserializeNestedJsonString(): JsonNode {
-                val res: ObjectNode = om.createObjectNode()
+            fun JsonNode.deserializeNestedJsonString(): JsonNode = apply {
                 fields().forEach {
-                    val value: JsonNode = if (it.value.isTextual) {
+                    if (it.value.isTextual) {
                         val str = it.value.asText()
-                        // TODO: change this check.
-                        if (str.startsWith("{")) om.readTree(str)
-                        else it.value
-                    } else it.value
-                    res.replace(it.key, value)
+                        try {
+                            val parsed = om.readTree(str)
+                            this as ObjectNode
+                            this.replace(it.key, parsed)
+                        } catch (_: Exception) {
+                        }
+                    }
                 }
-                return res
+            }
+
+            fun JsonNode.fixPayloadJsonStringOn(property: String): JsonNode = apply {
+                this["payload"][property]?.let {
+                    val n = this["payload"] as ObjectNode
+                    n.replace(property, it.deserializeNestedJsonString())
+                }
             }
 
             val node = om.readTree(data)
-
-            node["payload"]["before"]?.let {
-                val n = node["payload"] as ObjectNode
-                n.replace("before", it.deserializeNestedJsonString())
-            }
-            node["payload"]["after"]?.let {
-                val n = node["payload"] as ObjectNode
-                n.replace("after", it.deserializeNestedJsonString())
-            }
-
+            node.fixPayloadJsonStringOn("before")
+            node.fixPayloadJsonStringOn("after")
             return node
         }
     }
