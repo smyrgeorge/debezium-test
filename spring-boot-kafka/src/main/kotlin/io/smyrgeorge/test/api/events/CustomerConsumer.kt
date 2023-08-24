@@ -75,6 +75,19 @@ class InventoryConsumer {
         }
     }
 
+    data class Customer(
+        val id: Int,
+        val firstName: String,
+        val lastName: String,
+        val email: String,
+
+    ) {
+        data class Test(
+            val a: Int,
+            
+        )
+    }
+
     class JsonNodeDeserializer : Deserializer<JsonNode> {
 
         private val om = ObjectMapperFactory.createSnakeCase()
