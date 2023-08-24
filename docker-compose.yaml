@@ -48,6 +48,8 @@ services:
       - CONNECT_REST_EXTENSION_CLASSES=io.debezium.kcrestextension.DebeziumConnectRestExtension
       - ENABLE_APICURIO_CONVERTERS=true
       - ENABLE_JOLOKIA=true
+#    volumes:
+#      - ./conf/kafka-connect:/kafka/connect/connect-smts-json
     restart: unless-stopped
   apicurio:
     image: apicurio/apicurio-registry-sql:${APICURIO_VERSION}
