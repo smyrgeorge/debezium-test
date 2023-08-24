@@ -1,6 +1,7 @@
 package io.smyrgeorge.test.api.events
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.ObjectNode
 import io.smyrgeorge.test.util.ObjectMapperFactory
 import jakarta.annotation.PostConstruct
 import org.apache.kafka.clients.consumer.ConsumerConfig
@@ -16,14 +17,14 @@ import java.time.ZoneId
 
 
 /**
- * [InventoryConsumer] application using Reactive API for Kafka.
+ * [CustomerConsumer] application using Reactive API for Kafka.
  * To run sample consumer
  *
  *  - Start Zookeeper and Kafka server
  *  - Update [bootstrapServers] and [.TOPIC] if required
  *  - Create a Kafka topic [.TOPIC]
  *  - Send some messages to the topic.
- *  - Run [InventoryConsumer] as Java application with all dependent jars in the CLASSPATH (e.g., from IDE).
+ *  - Run [CustomerConsumer] as Java application with all dependent jars in the CLASSPATH (e.g., from IDE).
  *  - Shutdown Kafka server and Zookeeper when no longer required.
  *
  * https://projectreactor.io/docs/kafka/release/reference/
@@ -31,7 +32,7 @@ import java.time.ZoneId
  *
  */
 @Component
-class InventoryConsumer {
+class CustomerConsumer {
 
     private val log = LoggerFactory.getLogger(this::class.java)
 
@@ -44,12 +45,13 @@ class InventoryConsumer {
         ConsumerConfig.CLIENT_ID_CONFIG to "spring-boot-kafka",
         ConsumerConfig.GROUP_ID_CONFIG to "spring-boot-kafka",
         ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to JsonNodeDeserializer::class.java,
-        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to JsonNodeDeserializer::class.java,
+        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to CustomJsonNodeDeserializer::class.java,
         ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
     )
 
     private val receiverOptions: ReceiverOptions<JsonNode, JsonNode> =
-        ReceiverOptions.create<JsonNode, JsonNode>(props).subscription(setOf(topic))
+        ReceiverOptions.create<JsonNode, JsonNode>(props)
+            .subscription(setOf(topic))
 
     @PostConstruct
     fun setup() {
@@ -75,25 +77,47 @@ class InventoryConsumer {
         }
     }
 
-    data class Customer(
-        val id: Int,
-        val firstName: String,
-        val lastName: String,
-        val email: String,
-
-    ) {
-        data class Test(
-            val a: Int,
-            
-        )
-    }
-
     class JsonNodeDeserializer : Deserializer<JsonNode> {
 
         private val om = ObjectMapperFactory.createSnakeCase()
 
         override fun deserialize(topic: String, data: ByteArray): JsonNode =
             om.readTree(data)
+    }
 
+    class CustomJsonNodeDeserializer : Deserializer<JsonNode> {
+
+        private val om = ObjectMapperFactory.createSnakeCase()
+
+        override fun deserialize(topic: String, data: ByteArray): JsonNode {
+
+            fun JsonNode.deserializeNestedJsonString(): JsonNode {
+                val res: ObjectNode = om.createObjectNode()
+                fields().forEach {
+                    val value: JsonNode = if (it.value.isTextual) {
+                        val str = it.value.asText()
+                        // TODO: change this check.
+                        if (str.startsWith("{")) om.readTree(str)
+                        else it.value
+                    } else it.value
+                    res.replace(it.key, value)
+                }
+                return res
+            }
+
+            val node = om.readTree(data)
+
+            node["payload"]["before"]?.let {
+                val n = node["payload"] as ObjectNode
+                n.replace("before", it.deserializeNestedJsonString())
+            }
+            node["payload"]["after"]?.let {
+                val n = node["payload"] as ObjectNode
+                n.replace("after", it.deserializeNestedJsonString())
+            }
+
+            return node
+        }
     }
 }
+
