@@ -117,8 +117,8 @@ class CustomerConsumer {
             // Deserialize to [JsonNode].
             return om.readTree(data).apply {
                 // Fix nested json-string properties if any.
-                this.fixPayloadJsonStringOn("before")
-                this.fixPayloadJsonStringOn("after")
+                fixPayloadJsonStringOn("before")
+                fixPayloadJsonStringOn("after")
             }
         }
     }
