@@ -1,17 +1,21 @@
 package io.smyrgeorge.test.api.events
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.smyrgeorge.test.util.ObjectMapperFactory
 import jakarta.annotation.PostConstruct
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.Deserializer
+import org.javers.core.Javers
+import org.javers.core.JaversBuilder
+import org.javers.core.diff.Diff
+import org.javers.core.diff.ListCompareAlgorithm
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import reactor.core.Disposable
 import reactor.kafka.receiver.KafkaReceiver
 import reactor.kafka.receiver.ReceiverOptions
-import reactor.kafka.receiver.ReceiverRecord
 import java.time.Instant
 import java.time.ZoneId
 
@@ -51,8 +55,8 @@ class CustomerConsumer {
         ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
     )
 
-    private val receiverOptions: ReceiverOptions<JsonNode, JsonNode> =
-        ReceiverOptions.create<JsonNode, JsonNode>(props)
+    private val receiverOptions: ReceiverOptions<JsonNode, CustomJsonNodeDeserializer.Event> =
+        ReceiverOptions.create<JsonNode, CustomJsonNodeDeserializer.Event>(props)
             .subscription(setOf(topic))
 
     @PostConstruct
@@ -62,9 +66,15 @@ class CustomerConsumer {
 
     private fun receiver(): Disposable {
         val kafkaFlux = KafkaReceiver.create(receiverOptions).receive()
-        return kafkaFlux.subscribe { record: ReceiverRecord<JsonNode, JsonNode> ->
+        return kafkaFlux.subscribe { record ->
 
             val offset = record.receiverOffset()
+
+            val before: Customer? = record.value().payload.beforeAs(Customer::class.java)
+            val after: Customer? = record.value().payload.afterAs(Customer::class.java)
+            val diff: Diff = record.value().payload.diff(Customer::class.java)
+
+            log.info(diff.toString())
 
             log.info(
                 "Received message: topic-partition={} offset={} timestamp={} key={} value={}",
@@ -79,6 +89,19 @@ class CustomerConsumer {
         }
     }
 
+    data class Customer(
+        val id: Int,
+        val firstName: String,
+        val lastName: String,
+        val email: String,
+        val test: Test
+    ) {
+        data class Test(
+            val a: Int,
+            val b: String
+        )
+    }
+
     class JsonNodeDeserializer : Deserializer<JsonNode> {
 
         private val om = ObjectMapperFactory.createSnakeCase()
@@ -87,11 +110,9 @@ class CustomerConsumer {
             om.readTree(data)
     }
 
-    class CustomJsonNodeDeserializer : Deserializer<JsonNode> {
+    class CustomJsonNodeDeserializer : Deserializer<CustomJsonNodeDeserializer.Event> {
 
-        private val om = ObjectMapperFactory.createSnakeCase()
-
-        override fun deserialize(topic: String, data: ByteArray): JsonNode {
+        override fun deserialize(topic: String, data: ByteArray): Event {
 
             fun JsonNode.deserializeNestedJsonString(): JsonNode = apply {
                 fields().forEach {
@@ -100,26 +121,75 @@ class CustomerConsumer {
                         try {
                             val parsed = om.readTree(str)
                             this as ObjectNode
-                            this.replace(it.key, parsed)
+                            replace(it.key, parsed)
                         } catch (_: Exception) {
                         }
                     }
                 }
             }
 
-            fun JsonNode.fixPayloadJsonStringOn(property: String): JsonNode = apply {
-                this["payload"][property]?.let {
-                    val n = this["payload"] as ObjectNode
-                    n.replace(property, it.deserializeNestedJsonString())
-                }
-            }
-
             // Deserialize to [JsonNode].
-            return om.readTree(data).apply {
-                // Fix nested json-string properties if any.
-                fixPayloadJsonStringOn("before")
-                fixPayloadJsonStringOn("after")
+            return om.readValue(data, Event::class.java).apply {
+                // Deserialize before/after properties.
+                payload.before?.deserializeNestedJsonString()
+                payload.after?.deserializeNestedJsonString()
             }
+        }
+
+        data class Event(
+            val schema: Schema,
+            val payload: Payload
+        ) {
+            data class Schema(
+                val type: String,
+                val fields: JsonNode,
+                val optional: Boolean,
+                val name: String,
+                val version: Int
+            )
+
+            data class Payload(
+                val before: JsonNode?,
+                val after: JsonNode?,
+                val source: JsonNode,
+                val op: String,
+                val tsMs: Long,
+                val transaction: String?
+            ) {
+
+                private var b: Any? = null
+                private var a: Any? = null
+
+                @Suppress("UNCHECKED_CAST")
+                fun <T> beforeAs(clazz: Class<T>): T? {
+                    if (b != null) return b as T
+                    return before?.let {
+                        val res: T = om.convertValue(before, clazz)
+                        b = res
+                        res
+                    }
+                }
+
+                @Suppress("UNCHECKED_CAST")
+                fun <T> afterAs(clazz: Class<T>): T? {
+                    if (a != null) return a as T
+                    return after?.let {
+                        val res: T = om.convertValue(after, clazz)
+                        a = res
+                        res
+                    }
+                }
+
+                fun diff(clazz: Class<*>): Diff =
+                    javers.compare(beforeAs(clazz), afterAs(clazz))
+            }
+        }
+
+        companion object {
+            private val om: ObjectMapper = ObjectMapperFactory.createSnakeCase()
+            private val javers: Javers = JaversBuilder.javers()
+                .withListCompareAlgorithm(ListCompareAlgorithm.LEVENSHTEIN_DISTANCE)
+                .build()
         }
     }
 }

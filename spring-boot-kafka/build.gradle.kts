@@ -45,6 +45,9 @@ dependencies {
     // https://github.com/reactor/reactor-kafka
     implementation("io.projectreactor.kafka:reactor-kafka:1.3.20")
 
+    // https://mvnrepository.com/artifact/org.javers/javers-core
+    implementation("org.javers:javers-core:7.3.2")
+
     // Test dependencies
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     // https://github.com/mockito/mockito-kotlin
