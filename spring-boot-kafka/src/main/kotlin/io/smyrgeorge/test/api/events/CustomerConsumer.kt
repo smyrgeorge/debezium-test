@@ -30,12 +30,14 @@ import java.time.ZoneId
  * https://projectreactor.io/docs/kafka/release/reference/
  * https://github.com/reactor/reactor-kafka/blob/main/reactor-kafka-samples/src/main/java/reactor/kafka/samples/SampleConsumer.java
  *
+ *
+ * For deep object diff comparison check here:
+ * https://javers.org/documentation/diff-examples/
  */
 @Component
 class CustomerConsumer {
 
     private val log = LoggerFactory.getLogger(this::class.java)
-
 
     private val bootstrapServers = "localhost:59092"
     private val topic = "dbserver1.inventory.customers"
@@ -112,10 +114,12 @@ class CustomerConsumer {
                 }
             }
 
-            val node = om.readTree(data)
-            node.fixPayloadJsonStringOn("before")
-            node.fixPayloadJsonStringOn("after")
-            return node
+            // Deserialize to [JsonNode].
+            return om.readTree(data).apply {
+                // Fix nested json-string properties if any.
+                this.fixPayloadJsonStringOn("before")
+                this.fixPayloadJsonStringOn("after")
+            }
         }
     }
 }
