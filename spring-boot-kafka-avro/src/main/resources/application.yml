@@ -1,0 +1,18 @@
+app:
+  env: local
+
+server:
+  port: 7070
+
+spring:
+  main:
+    banner-mode: "off"
+
+logging:
+  pattern:
+    console: "%4relative %green(%d) %X{identity} [%thread] %highlight(${LOG_LEVEL_PATTERN:- %p}) %cyan(%logger{35}) - %msg%n"
+  level:
+    root: INFO
+    io.smyrgeorge.test: DEBUG
+    org.springframework.web: INFO
+    org.apache.kafka: INFO
