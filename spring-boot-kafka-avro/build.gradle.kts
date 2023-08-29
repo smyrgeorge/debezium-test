@@ -6,6 +6,8 @@ plugins {
     kotlin("jvm") version "1.9.0"
     // https://plugins.gradle.org/plugin/org.jetbrains.kotlin.plugin.spring
     kotlin("plugin.spring") version "1.9.0"
+    // https://plugins.gradle.org/plugin/org.jetbrains.kotlin.plugin.serialization
+    kotlin("plugin.serialization") version "1.9.10"
     // https://plugins.gradle.org/plugin/org.springframework.boot
     id("org.springframework.boot") version "3.1.2"
     // https://plugins.gradle.org/plugin/io.spring.dependency-management
@@ -44,6 +46,10 @@ dependencies {
     // Kafka
     // https://github.com/reactor/reactor-kafka
     implementation("io.projectreactor.kafka:reactor-kafka:1.3.20")
+
+    // Avro4k
+    // https://github.com/avro-kotlin/avro4k
+    implementation("com.github.avro-kotlin.avro4k:avro4k-core:1.9.0")
 
     // https://mvnrepository.com/artifact/org.javers/javers-core
     implementation("org.javers:javers-core:7.3.2")

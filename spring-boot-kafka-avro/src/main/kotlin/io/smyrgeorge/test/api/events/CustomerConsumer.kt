@@ -1,15 +1,14 @@
 package io.smyrgeorge.test.api.events
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ObjectNode
-import io.smyrgeorge.test.util.ObjectMapperFactory
+import com.github.avrokotlin.avro4k.Avro
+import com.github.avrokotlin.avro4k.AvroConfiguration
 import jakarta.annotation.PostConstruct
+import kotlinx.serialization.Serializable
+import org.apache.avro.Schema
 import org.apache.kafka.clients.consumer.ConsumerConfig
-import org.apache.kafka.common.serialization.Deserializer
+import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.javers.core.Javers
 import org.javers.core.JaversBuilder
-import org.javers.core.diff.Diff
 import org.javers.core.diff.ListCompareAlgorithm
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -50,18 +49,39 @@ class CustomerConsumer {
         ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
         ConsumerConfig.CLIENT_ID_CONFIG to "spring-boot-kafka",
         ConsumerConfig.GROUP_ID_CONFIG to "spring-boot-kafka",
-        ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to JsonNodeDeserializer::class.java,
-        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to CustomJsonNodeDeserializer::class.java,
+        ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java,
+        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java,
         ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
     )
 
-    private val receiverOptions: ReceiverOptions<JsonNode, CustomJsonNodeDeserializer.Event> =
-        ReceiverOptions.create<JsonNode, CustomJsonNodeDeserializer.Event>(props)
+    private val receiverOptions: ReceiverOptions<ByteArray, ByteArray> =
+        ReceiverOptions.create<ByteArray, ByteArray>(props)
             .subscription(setOf(topic))
 
     @PostConstruct
     fun setup() {
         receiver()
+
+        log.info(Customer.schema.toString(true))
+    }
+
+    @Serializable
+    data class Customer(
+        val id: Int,
+        val firstName: String,
+        val lastName: String,
+        val email: String,
+        val test: Test
+    ) {
+        @Serializable
+        data class Test(
+            val a: Int?,
+            val b: String
+        )
+
+        companion object {
+            val schema: Schema = avro.schema(serializer())
+        }
     }
 
     private fun receiver(): Disposable {
@@ -70,11 +90,13 @@ class CustomerConsumer {
 
             val offset = record.receiverOffset()
 
-            val before: Customer? = record.value().payload.beforeAs(Customer::class.java)
-            val after: Customer? = record.value().payload.afterAs(Customer::class.java)
-            val diff: Diff = record.value().payload.diff(Customer::class.java)
-
-            log.info(diff.toString())
+//            val input = avro.openInputStream(Customer.serializer()) {
+//                decodeFormat = AvroDecodeFormat.Binary(Customer.schema, Customer.schema)
+//            }.from(record.value())
+//            input.iterator().forEach {
+//                println(it)
+//            }
+//            input.close()
 
             log.info(
                 "Received message: topic-partition={} offset={} timestamp={} key={} value={}",
@@ -89,108 +111,11 @@ class CustomerConsumer {
         }
     }
 
-    data class Customer(
-        val id: Int,
-        val firstName: String,
-        val lastName: String,
-        val email: String,
-        val test: Test
-    ) {
-        data class Test(
-            val a: Int,
-            val b: String
-        )
-    }
-
-    class JsonNodeDeserializer : Deserializer<JsonNode> {
-
-        private val om = ObjectMapperFactory.createSnakeCase()
-
-        override fun deserialize(topic: String, data: ByteArray): JsonNode =
-            om.readTree(data)
-    }
-
-    class CustomJsonNodeDeserializer : Deserializer<CustomJsonNodeDeserializer.Event> {
-
-        override fun deserialize(topic: String, data: ByteArray): Event {
-
-            fun JsonNode.deserializeNestedJsonString(): JsonNode = apply {
-                fields().forEach {
-                    if (it.value.isTextual) {
-                        val str = it.value.asText()
-                        try {
-                            val parsed = om.readTree(str)
-                            this as ObjectNode
-                            replace(it.key, parsed)
-                        } catch (_: Exception) {
-                        }
-                    }
-                }
-            }
-
-            // Deserialize to [JsonNode].
-            return om.readValue(data, Event::class.java).apply {
-                // Deserialize before/after properties.
-                payload.before?.deserializeNestedJsonString()
-                payload.after?.deserializeNestedJsonString()
-            }
-        }
-
-        data class Event(
-            val schema: Schema,
-            val payload: Payload
-        ) {
-            data class Schema(
-                val type: String,
-                val fields: JsonNode,
-                val optional: Boolean,
-                val name: String,
-                val version: Int
-            )
-
-            data class Payload(
-                val before: JsonNode?,
-                val after: JsonNode?,
-                val source: JsonNode,
-                val op: String,
-                val tsMs: Long,
-                val transaction: String?
-            ) {
-
-                private var b: Any? = null
-                private var a: Any? = null
-
-                @Suppress("UNCHECKED_CAST")
-                fun <T> beforeAs(clazz: Class<T>): T? {
-                    if (b != null) return b as T
-                    return before?.let {
-                        val res: T = om.convertValue(before, clazz)
-                        b = res
-                        res
-                    }
-                }
-
-                @Suppress("UNCHECKED_CAST")
-                fun <T> afterAs(clazz: Class<T>): T? {
-                    if (a != null) return a as T
-                    return after?.let {
-                        val res: T = om.convertValue(after, clazz)
-                        a = res
-                        res
-                    }
-                }
-
-                fun diff(clazz: Class<*>): Diff =
-                    javers.compare(beforeAs(clazz), afterAs(clazz))
-            }
-        }
-
-        companion object {
-            private val om: ObjectMapper = ObjectMapperFactory.createSnakeCase()
-            private val javers: Javers = JaversBuilder.javers()
-                .withListCompareAlgorithm(ListCompareAlgorithm.LEVENSHTEIN_DISTANCE)
-                .build()
-        }
+    companion object {
+        private val avro = Avro(AvroConfiguration(implicitNulls = true))
+        private val javers: Javers = JaversBuilder.javers()
+            .withListCompareAlgorithm(ListCompareAlgorithm.LEVENSHTEIN_DISTANCE)
+            .build()
     }
 }
 
