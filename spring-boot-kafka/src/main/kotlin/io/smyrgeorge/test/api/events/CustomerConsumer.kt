@@ -145,7 +145,6 @@ class CustomerConsumer {
             val payload: Payload,
         ) {
 
-            @Suppress("unused")
             enum class Operation {
                 CREATE,
                 UPDATE,
