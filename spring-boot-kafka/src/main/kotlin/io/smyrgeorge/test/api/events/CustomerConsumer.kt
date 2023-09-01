@@ -51,12 +51,12 @@ class CustomerConsumer {
         ConsumerConfig.CLIENT_ID_CONFIG to "spring-boot-kafka",
         ConsumerConfig.GROUP_ID_CONFIG to "spring-boot-kafka",
         ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to JsonNodeDeserializer::class.java,
-        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to CustomJsonNodeDeserializer::class.java,
+        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to JsonNodeValueDeserializer::class.java,
         ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
     )
 
-    private val receiverOptions: ReceiverOptions<JsonNode, CustomJsonNodeDeserializer.Event> =
-        ReceiverOptions.create<JsonNode, CustomJsonNodeDeserializer.Event>(props)
+    private val receiverOptions: ReceiverOptions<JsonNode, JsonNodeValueDeserializer.Event> =
+        ReceiverOptions.create<JsonNode, JsonNodeValueDeserializer.Event>(props)
             .subscription(setOf(topic))
 
     @PostConstruct
@@ -110,7 +110,7 @@ class CustomerConsumer {
             om.readTree(data)
     }
 
-    class CustomJsonNodeDeserializer : Deserializer<CustomJsonNodeDeserializer.Event> {
+    class JsonNodeValueDeserializer : Deserializer<JsonNodeValueDeserializer.Event> {
 
         override fun deserialize(topic: String, data: ByteArray): Event {
 
@@ -129,17 +129,31 @@ class CustomerConsumer {
             }
 
             // Deserialize to [JsonNode].
-            return om.readValue(data, Event::class.java).apply {
+            val e = om.readValue(data, InternalEvent::class.java).apply {
                 // Deserialize before/after properties.
                 payload.before?.deserializeNestedJsonString()
                 payload.after?.deserializeNestedJsonString()
             }
+
+            // Transform to the actual event.
+            return e.toEvent(topic)
         }
 
         data class Event(
+            val topic: String,
             val schema: Schema,
-            val payload: Payload
+            val payload: Payload,
+            val op: Operation
         ) {
+
+            @Suppress("unused")
+            enum class Operation {
+                CREATE,
+                UPDATE,
+                DELETE,
+                READ
+            }
+
             data class Schema(
                 val type: String,
                 val fields: JsonNode,
@@ -183,6 +197,25 @@ class CustomerConsumer {
                 fun diff(clazz: Class<*>): Diff =
                     javers.compare(beforeAs(clazz), afterAs(clazz))
             }
+        }
+
+        private data class InternalEvent(
+            val schema: Event.Schema,
+            val payload: Event.Payload,
+            val op: String
+        ) {
+            fun toEvent(topic: String): Event = Event(
+                topic = topic,
+                schema = schema,
+                payload = payload,
+                op = when (op) {
+                    "c" -> Event.Operation.CREATE
+                    "r" -> Event.Operation.READ
+                    "d" -> Event.Operation.DELETE
+                    "u" -> Event.Operation.UPDATE
+                    else -> error("Cannot map value='$op' to Operation enum.")
+                }
+            )
         }
 
         companion object {
