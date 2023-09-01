@@ -143,7 +143,6 @@ class CustomerConsumer {
             val topic: String,
             val schema: Schema,
             val payload: Payload,
-            val op: Operation
         ) {
 
             @Suppress("unused")
@@ -166,7 +165,7 @@ class CustomerConsumer {
                 val before: JsonNode?,
                 val after: JsonNode?,
                 val source: JsonNode,
-                val op: String,
+                val op: Operation,
                 val tsMs: Long,
                 val transaction: String?
             ) {
@@ -201,21 +200,39 @@ class CustomerConsumer {
 
         private data class InternalEvent(
             val schema: Event.Schema,
-            val payload: Event.Payload,
-            val op: String
+            val payload: InternalPayload,
+            val op: String?
         ) {
             fun toEvent(topic: String): Event = Event(
                 topic = topic,
                 schema = schema,
-                payload = payload,
-                op = when (op) {
-                    "c" -> Event.Operation.CREATE
-                    "r" -> Event.Operation.READ
-                    "d" -> Event.Operation.DELETE
-                    "u" -> Event.Operation.UPDATE
-                    else -> error("Cannot map value='$op' to Operation enum.")
-                }
+                payload = payload.toPayload(),
             )
+
+            data class InternalPayload(
+                val before: JsonNode?,
+                val after: JsonNode?,
+                val source: JsonNode,
+                val op: String,
+                val tsMs: Long,
+                val transaction: String?
+            ) {
+
+                fun toPayload(): Event.Payload = Event.Payload(
+                    before = before,
+                    after = after,
+                    source = source,
+                    op = when (op) {
+                        "c" -> Event.Operation.CREATE
+                        "r" -> Event.Operation.READ
+                        "d" -> Event.Operation.DELETE
+                        "u" -> Event.Operation.UPDATE
+                        else -> error("Cannot map value='$op' to Operation enum.")
+                    },
+                    tsMs = tsMs,
+                    transaction = transaction
+                )
+            }
         }
 
         companion object {
