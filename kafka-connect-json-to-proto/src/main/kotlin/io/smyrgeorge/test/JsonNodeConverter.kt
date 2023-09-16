@@ -53,15 +53,16 @@ class JsonNodeConverter : Converter {
     }
 
     private fun JsonNode.deserializeJsonStringFields(): JsonNode = apply {
-        fields().forEach {
+        fields().forEach { f ->
             when {
-                it.value.isObject -> it.value.deserializeJsonStringFields()
-                it.value.isTextual -> {
-                    val str = it.value.asText()
+                f.value.isObject -> f.value.deserializeJsonStringFields()
+                f.value.isArray -> f.value.forEach { it.deserializeJsonStringFields() }
+                f.value.isTextual -> {
+                    val str = f.value.asText()
                     try {
                         val parsed = om.readTree(str)
                         this as ObjectNode
-                        replace(it.key, parsed)
+                        replace(f.key, parsed)
                     } catch (_: Exception) {
                     }
                 }
