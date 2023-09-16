@@ -2,18 +2,15 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    // https://plugins.gradle.org/plugin/org.jetbrains.kotlin.jvm
-    kotlin("jvm") version "1.9.0"
-    // https://plugins.gradle.org/plugin/org.jetbrains.kotlin.plugin.spring
-    kotlin("plugin.spring") version "1.9.0"
-    // https://plugins.gradle.org/plugin/org.springframework.boot
-    id("org.springframework.boot") version "3.1.2"
-    // https://plugins.gradle.org/plugin/io.spring.dependency-management
-    id("io.spring.dependency-management") version "1.1.3"
+    kotlin("jvm")
+    kotlin("plugin.spring")
+    id("org.springframework.boot")
+    id("io.spring.dependency-management")
 }
 
-group = "io.smyrgeorge.test"
-version = "0.0.1"
+group = rootProject.group
+version = rootProject.version
+
 java.sourceCompatibility = JavaVersion.VERSION_18
 
 repositories {

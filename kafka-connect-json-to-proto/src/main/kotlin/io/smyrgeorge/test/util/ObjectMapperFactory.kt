@@ -1,4 +1,4 @@
-package io.smyrgeorge.test
+package io.smyrgeorge.test.util
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect
 import com.fasterxml.jackson.annotation.JsonInclude

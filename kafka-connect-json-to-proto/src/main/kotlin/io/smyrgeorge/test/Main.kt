@@ -1,8 +1,9 @@
 package io.smyrgeorge.test
 
-class Main {
+class Main
 
-    fun main(args: Array<String>) {
-    }
-
+@Suppress("UNUSED_PARAMETER")
+fun main(args: Array<String>) {
+    val c = ProtobufConverter()
+    println(c)
 }

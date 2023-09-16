@@ -1,75 +1,47 @@
 package io.smyrgeorge.test
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.NullNode
-import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.module.kotlin.treeToValue
+import io.smyrgeorge.test.domain.Customer
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.encodeToByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
 import org.apache.kafka.connect.data.Schema
 import org.apache.kafka.connect.data.SchemaAndValue
-import org.apache.kafka.connect.data.Struct
 import org.apache.kafka.connect.storage.Converter
-import java.math.BigDecimal
-import java.math.BigInteger
 
+@OptIn(ExperimentalSerializationApi::class)
 class ProtobufConverter : Converter {
+
+    private val jsonNodeConverter: JsonNodeConverter = JsonNodeConverter()
+
+//    private val classes: Map<String, Class<*>> =
+//        ClassLoader("io.smyrgeorge.test.domain").getTypesAnnotatedWith(Dbz::class.java)
+//            .associateBy { it.getAnnotation(Dbz::class.java).topic }
+//            .map { e -> e.key to e.value.declaredClasses.first { it.simpleName == "ChangeEvent" } }.toMap()
+
     override fun configure(configs: MutableMap<String, *>, isKey: Boolean) {
-        println("[ProtobufConverter] Hello!")
+        println("[ProtobufConverter] :: Hello!")
+        jsonNodeConverter.configure(configs, isKey)
     }
 
     override fun fromConnectData(topic: String, schema: Schema, value: Any): ByteArray {
-        value as Struct
-        println("[ProtobufConverter] received: $value")
-        val json = om.writeValueAsString(value.toJsonNode())
-        println("[ProtobufConverter] toJson: $json")
-        return json.toByteArray()
+        val jsonNode: JsonNode = jsonNodeConverter.fromConnectDataToJsonNode(topic, schema, value)
+        return when (topic) {
+            "dbserver1.inventory.customers" -> {
+                val e = jsonNodeConverter.om.treeToValue<Customer.ChangeEvent>(jsonNode)
+                ProtoBuf.encodeToByteArray(e)
+            }
+
+            else -> error("[ProtobufConverter] :: Cannot convert $jsonNode to protobuf. Topic not supported.")
+        }
+//        val kClass: Class<*> = classes[topic] ?: error("[ProtobufConverter] :: KClass not found. Terminating..")
+//        val entity: Any = jsonNodeConverter.om.treeToValue(jsonNode, kClass)
+//        println("[ProtobufConverter] :: $entity")
+//        return ProtoBuf.encodeToByteArray(entity)
     }
 
     override fun toConnectData(topic: String, value: ByteArray): SchemaAndValue {
-        error("[ProtobufConverter] toConnectData method not supported")
-    }
-
-    private fun Struct.toJsonNode(): JsonNode {
-        // Create an empty [ObjectNode].
-        val node: ObjectNode = om.createObjectNode()
-
-        // Convert each property.
-        schema().fields().forEach { f ->
-            when (val v: Any? = get(f)) {
-                null -> node.set(f.name(), NullNode.instance)
-                is Int -> node.put(f.name(), v)
-                is Long -> node.put(f.name(), v)
-                is Short -> node.put(f.name(), v)
-                is BigInteger -> node.put(f.name(), v)
-                is Double -> node.put(f.name(), v)
-                is Float -> node.put(f.name(), v)
-                is BigDecimal -> node.put(f.name(), v)
-                is String -> node.put(f.name(), v)
-                is Boolean -> node.put(f.name(), v)
-                is Struct -> node.set(f.name(), v.toJsonNode())
-                else -> error("Cannot map Struct to JsonNode. Value was $v")
-            }
-        }
-
-        return node.deserializeJsonStringFields()
-    }
-
-    private fun JsonNode.deserializeJsonStringFields(): JsonNode = apply {
-        fields().forEach {
-            when {
-                it.value.isObject -> it.value.deserializeJsonStringFields()
-                it.value.isTextual -> {
-                    val str = it.value.asText()
-                    try {
-                        val parsed = om.readTree(str)
-                        this as ObjectNode
-                        replace(it.key, parsed)
-                    } catch (_: Exception) {
-                    }
-                }
-            }
-        }
-    }
-
-    companion object {
-        private val om = ObjectMapperFactory.createSnakeCase()
+        error("[ProtobufConverter] :: toConnectData method not supported")
     }
 }

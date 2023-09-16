@@ -1,18 +1,17 @@
-import org.gradle.api.tasks.testing.logging.TestLogEvent
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     java
     application
-    // https://plugins.gradle.org/plugin/org.jetbrains.kotlin.jvm
-    kotlin("jvm") version "1.9.0"
-    // https://plugins.gradle.org/plugin/com.github.johnrengelman.shadow
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    kotlin("jvm")
+    kotlin("plugin.serialization")
+    id("com.github.johnrengelman.shadow")
 }
 
-group = "io.smyrgeorge.test"
-version = "0.0.1"
+group = rootProject.group
+version = rootProject.version
 
 java.sourceCompatibility = JavaVersion.VERSION_11
 
@@ -30,6 +29,10 @@ dependencies {
 
     // Kotlin
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.6.0")
+
+    // Reflexion
+    implementation("org.reflections:reflections:0.10.2")
 
     // Jackson
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")

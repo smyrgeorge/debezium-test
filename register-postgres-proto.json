@@ -9,8 +9,8 @@
     "database.password": "postgres",
     "database.dbname": "postgres",
     "topic.prefix": "dbserver1",
-    "schema.include.list": "inventory",
-    "key.converter": "io.smyrgeorge.test.ProtobufConverter",
+    "table.include.list": "inventory.customers",
+    "key.converter": "io.smyrgeorge.test.JsonNodeConverter",
     "value.converter": "io.smyrgeorge.test.ProtobufConverter"
   }
 }

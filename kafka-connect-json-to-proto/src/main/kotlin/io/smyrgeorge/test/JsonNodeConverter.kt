@@ -3,6 +3,7 @@ package io.smyrgeorge.test
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.NullNode
 import com.fasterxml.jackson.databind.node.ObjectNode
+import io.smyrgeorge.test.util.ObjectMapperFactory
 import org.apache.kafka.connect.data.Schema
 import org.apache.kafka.connect.data.SchemaAndValue
 import org.apache.kafka.connect.data.Struct
@@ -11,20 +12,26 @@ import java.math.BigDecimal
 import java.math.BigInteger
 
 class JsonNodeConverter : Converter {
+
+    val om = ObjectMapperFactory.createSnakeCase()
+
     override fun configure(configs: MutableMap<String, *>, isKey: Boolean) {
-        println("[ProtobufConverter] Hello!")
+        println("[JsonNodeConverter] Hello!")
     }
 
     override fun fromConnectData(topic: String, schema: Schema, value: Any): ByteArray {
+        val jsonNode = fromConnectDataToJsonNode(topic, schema, value)
+        return om.writeValueAsBytes(jsonNode)
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    fun fromConnectDataToJsonNode(topic: String, schema: Schema, value: Any): JsonNode {
         value as Struct
-        println("[ProtobufConverter] received: $value")
-        val json = om.writeValueAsString(value.toJsonNode())
-        println("[ProtobufConverter] toJson: $json")
-        return json.toByteArray()
+        return value.toJsonNode()
     }
 
     override fun toConnectData(topic: String, value: ByteArray): SchemaAndValue {
-        error("[ProtobufConverter] toConnectData method not supported")
+        error("[JsonNodeConverter] toConnectData method not supported")
     }
 
     private fun Struct.toJsonNode(): JsonNode {
@@ -68,9 +75,5 @@ class JsonNodeConverter : Converter {
                 }
             }
         }
-    }
-
-    companion object {
-        private val om = ObjectMapperFactory.createSnakeCase()
     }
 }
