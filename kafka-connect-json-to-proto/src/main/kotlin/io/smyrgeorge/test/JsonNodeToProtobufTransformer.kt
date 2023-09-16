@@ -13,7 +13,7 @@ class JsonNodeToProtobufTransformer : Transformation<SourceRecord> {
     }
 
     override fun apply(record: SourceRecord): SourceRecord {
-        println("[JsonNodeToProtobufTransformer] received: $record of type='${record::class.java.name}'.")
+        println("[JsonNodeToProtobufTransformer] received: ${record.value()}")
         return record
     }
 
