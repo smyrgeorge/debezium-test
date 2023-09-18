@@ -4,6 +4,7 @@ import io.smyrgeorge.test.domain.dbz.Dbz
 import io.smyrgeorge.test.domain.dbz.Source
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.protobuf.ProtoBuf
 import kotlinx.serialization.protobuf.ProtoNumber
 import io.smyrgeorge.test.domain.dbz.ChangeEvent as DbzChangeEvent
 
@@ -27,5 +28,9 @@ data class Customer(
         override val source: Source,
         override val op: String,
         override val tsMs: Long,
-    ) : DbzChangeEvent<Customer>
+    ) : DbzChangeEvent<Customer>, ProtoBufSerializable {
+
+        override fun toProtoBuf(): ByteArray =
+            ProtoBuf.encodeToByteArray(serializer(), this)
+    }
 }
