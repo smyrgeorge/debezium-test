@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package io.smyrgeorge.test.proto.domain.Customer;
+
+message Customer {
+  int32 id = 1;
+  string firstName = 2;
+  string lastName = 3;
+  string email = 4;
+}

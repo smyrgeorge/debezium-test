@@ -1,25 +1,27 @@
 package io.smyrgeorge.test
 
-import io.smyrgeorge.test.domain.Customer
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.decodeFromByteArray
-import kotlinx.serialization.encodeToByteArray
-import kotlinx.serialization.protobuf.ProtoBuf
-import kotlinx.serialization.protobuf.schema.ProtoBufSchemaGenerator
+import com.google.protobuf.DynamicMessage
+import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
+import io.confluent.kafka.schemaregistry.client.SchemaMetadata
+import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchema
 
 class Main
 
-@OptIn(ExperimentalSerializationApi::class)
 fun main() {
     val c = ProtobufConverter()
     println(c)
 
-    val customer = Customer(5, "test", "test", "test")
-    val bytes = ProtoBuf.encodeToByteArray(customer)
-    val customer1 = ProtoBuf.decodeFromByteArray<Customer>(bytes)
+    val schemaRegistryUrl = "http://localhost:58002/apis/ccompat/v7"
+    val schemaRegistryClient = CachedSchemaRegistryClient(schemaRegistryUrl, 100)
 
-    println("$customer :: $customer1")
+    val topic = "dbserver1.inventory.customers"
+    val meta: SchemaMetadata = schemaRegistryClient.getLatestSchemaMetadata(topic)
 
-    val schema = ProtoBufSchemaGenerator.generateSchemaText(Customer.serializer().descriptor)
-    println(schema)
+    val protoSchema = try {
+        schemaRegistryClient.getSchemaById(meta.id) as ProtobufSchema
+    } catch (e: Exception) {
+        throw e
+    }
+
+    val builder = DynamicMessage.newBuilder(protoSchema.toDescriptor())
 }

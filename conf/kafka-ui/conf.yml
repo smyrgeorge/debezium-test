@@ -6,6 +6,7 @@ kafka:
     name: debezium-test-kafka-1
     properties: {}
     readOnly: false
+    schemaRegistry: http://apicurio:8080/apis/ccompat/v7
 rbac:
   roles: []
 webclient: {}

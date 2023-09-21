@@ -3,6 +3,7 @@ package io.smyrgeorge.test
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.NullNode
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.google.common.base.CaseFormat
 import io.smyrgeorge.test.util.ObjectMapperFactory
 import org.apache.kafka.connect.data.Schema
 import org.apache.kafka.connect.data.SchemaAndValue
@@ -13,7 +14,7 @@ import java.math.BigInteger
 
 class JsonNodeConverter : Converter {
 
-    val om = ObjectMapperFactory.createSnakeCase()
+    private val om = ObjectMapperFactory.createCamelCase()
 
     override fun configure(configs: MutableMap<String, *>, isKey: Boolean) {
         println("[JsonNodeConverter] Hello!")
@@ -30,6 +31,11 @@ class JsonNodeConverter : Converter {
         return value.toJsonNode()
     }
 
+    fun fromConnectDataToJson(topic: String, schema: Schema, value: Any): String {
+        val jsonNode = fromConnectDataToJsonNode(topic, schema, value)
+        return om.writeValueAsString(jsonNode)
+    }
+
     override fun toConnectData(topic: String, value: ByteArray): SchemaAndValue {
         error("[JsonNodeConverter] toConnectData method not supported")
     }
@@ -40,18 +46,19 @@ class JsonNodeConverter : Converter {
 
         // Convert each property.
         schema().fields().forEach { f ->
+            val name = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, f.name())
             when (val v: Any? = get(f)) {
-                null -> node.set(f.name(), NullNode.instance)
-                is Int -> node.put(f.name(), v)
-                is Long -> node.put(f.name(), v)
-                is Short -> node.put(f.name(), v)
-                is BigInteger -> node.put(f.name(), v)
-                is Double -> node.put(f.name(), v)
-                is Float -> node.put(f.name(), v)
-                is BigDecimal -> node.put(f.name(), v)
-                is String -> node.put(f.name(), v)
-                is Boolean -> node.put(f.name(), v)
-                is Struct -> node.set(f.name(), v.toJsonNode())
+                null -> node.set(name, NullNode.instance)
+                is Int -> node.put(name, v)
+                is Long -> node.put(name, v)
+                is Short -> node.put(name, v)
+                is BigInteger -> node.put(name, v)
+                is Double -> node.put(name, v)
+                is Float -> node.put(name, v)
+                is BigDecimal -> node.put(name, v)
+                is String -> node.put(name, v)
+                is Boolean -> node.put(name, v)
+                is Struct -> node.set(name, v.toJsonNode())
                 else -> error("Cannot map Struct to JsonNode. Value was $v")
             }
         }

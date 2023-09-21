@@ -1,6 +1,8 @@
 group = "io.smyrgeorge.test"
 version = "0.1.0"
 
+val protocVersion: String by extra { "3.24.3" }
+
 // Common plugin versions here.
 plugins {
     // NOTE: we use [apply] false.

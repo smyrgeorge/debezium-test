@@ -17,36 +17,14 @@ java.sourceCompatibility = JavaVersion.VERSION_11
 
 repositories {
     mavenCentral()
-    maven { url = uri("https://packages.confluent.io/maven/") }
     // IMPORTANT: must be last.
     mavenLocal()
 }
 
-val protocVersion: String by rootProject.extra
-
 dependencies {
-    // Kafka
-    // https://mvnrepository.com/artifact/org.apache.kafka/connect-api
-    implementation("org.apache.kafka:connect-api:3.5.1")
-    implementation("org.apache.kafka:connect-transforms:3.5.1")
-    implementation("io.confluent:kafka-schema-registry-client:7.5.0")
-    implementation("io.confluent:kafka-protobuf-provider:7.5.0")
-
     // Kotlin
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.6.0")
-
-    // Jackson
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2")
-
-    // Protobuf
-    implementation("com.google.protobuf:protobuf-java:$protocVersion")
-    implementation("com.google.protobuf:protobuf-java-util:$protocVersion")
-
-    // https://github.com/mockito/mockito-kotlin
-    testImplementation("org.mockito.kotlin:mockito-kotlin:5.0.0")
 }
 
 tasks.withType<KotlinCompile> {
