@@ -34,7 +34,6 @@ dependencies {
 
     // Kotlin
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.6.0")
 
     // Jackson
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
