@@ -16,7 +16,7 @@ class JsonNodeConverter : Converter {
 
     private val om = ObjectMapperFactory.createCamelCase()
 
-    override fun configure(configs: MutableMap<String, *>, isKey: Boolean) {
+    override fun configure(configs: Map<String, *>, isKey: Boolean) {
         println("[JsonNodeConverter] Hello!")
     }
 

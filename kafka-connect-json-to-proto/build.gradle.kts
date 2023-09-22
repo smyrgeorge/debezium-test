@@ -29,8 +29,10 @@ dependencies {
     // https://mvnrepository.com/artifact/org.apache.kafka/connect-api
     implementation("org.apache.kafka:connect-api:3.5.1")
     implementation("org.apache.kafka:connect-transforms:3.5.1")
+    // https://packages.confluent.io/maven/io/confluent/kafka-schema-registry-client/
     implementation("io.confluent:kafka-schema-registry-client:7.5.0")
     implementation("io.confluent:kafka-protobuf-provider:7.5.0")
+    implementation("io.confluent:kafka-protobuf-serializer:7.5.0")
 
     // Kotlin
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.0")

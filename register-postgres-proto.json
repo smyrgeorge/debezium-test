@@ -11,6 +11,8 @@
     "topic.prefix": "dbserver1",
     "table.include.list": "inventory.customers",
     "key.converter": "io.smyrgeorge.test.JsonNodeConverter",
-    "value.converter": "io.smyrgeorge.test.ProtobufConverter"
+    "value.converter": "io.smyrgeorge.test.ProtobufConverter",
+    "value.converter.protobuf.schema.registry.url": "http://schema-registry:8085",
+    "value.converter.protobuf.schema.cache.capacity": 100
   }
 }

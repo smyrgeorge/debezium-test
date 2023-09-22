@@ -1,7 +1,21 @@
 syntax = "proto3";
-
 package io.smyrgeorge.test.proto.domain.Customer;
 
+message CustomerChangeEvent {
+  optional Customer before = 1;
+  optional Customer after = 2;
+  Source source = 3;
+  string op = 4;
+  int64 tsMs = 5;
+}
+message Source {
+  string version = 1;
+  string connector = 2;
+  string name = 3;
+  string db = 4;
+  string schema = 5;
+  string table = 6;
+}
 message Customer {
   int32 id = 1;
   string firstName = 2;
