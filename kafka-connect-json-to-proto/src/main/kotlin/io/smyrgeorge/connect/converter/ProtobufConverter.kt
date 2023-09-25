@@ -26,15 +26,19 @@ class ProtobufConverter : Converter {
 
     lateinit var schemaRegistryClient: SchemaRegistryClient
     private val subjectNameStrategy = TopicNameStrategy()
-    private val jsonNodeConverter: JsonNodeConverter = JsonNodeConverter()
+    val jsonNodeConverter: JsonNodeConverter = JsonNodeConverter()
 
     // <subject, message protobuf descriptor>
     private val cache: MutableMap<String, Pair<Descriptors.Descriptor, ProtobufSchema>> = BoundedConcurrentHashMap()
     private lateinit var serializer: KafkaProtobufSerializer<DynamicMessage>
 
     override fun configure(configs: Map<String, *>, isKey: Boolean) {
-        println("[ProtobufConverter] :: Hello! $configs")
-        jsonNodeConverter.configure(configs, isKey)
+        println("[ProtobufConverter] :: Hola! $configs")
+
+        val jsonProps = configs[Config.SKIP_PROPERTIES]?.let {
+            mapOf(JsonNodeConverter.Config.SKIP_PROPERTIES to it as String)
+        } ?: emptyMap()
+        jsonNodeConverter.configure(jsonProps, isKey)
 
         this.isKey = isKey
 
@@ -78,8 +82,7 @@ class ProtobufConverter : Converter {
     fun fromConnectData(topic: String, json: String): ByteArray {
         val descriptor: Descriptors.Descriptor = protoSchemaOf(topic).first
         val builder: DynamicMessage.Builder = DynamicMessage.newBuilder(descriptor)
-        // TODO: remove ignoringUnknownFields()
-        JsonFormat.parser().ignoringUnknownFields().merge(json, builder)
+        JsonFormat.parser().merge(json, builder)
         val message: DynamicMessage = builder.build()
         return serializer.serialize(topic, message)
     }
@@ -108,5 +111,6 @@ class ProtobufConverter : Converter {
         const val SCHEMA_REGISTRY_CACHE_CAPACITY: String = "protobuf.schema.cache.capacity"
         const val AUTO_REGISTER_SCHEMAS: String = "protobuf.auto.register.schemas"
         const val USE_LATEST_VERSION: String = "protobuf.use.latest.version"
+        const val SKIP_PROPERTIES: String = "protobuf.json.exclude.properties"
     }
 }

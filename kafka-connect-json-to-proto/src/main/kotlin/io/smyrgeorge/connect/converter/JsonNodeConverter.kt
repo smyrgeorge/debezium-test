@@ -16,12 +16,24 @@ class JsonNodeConverter : Converter {
 
     private val om = ObjectMapperFactory.createCamelCase()
 
+    // set<pair<path, propertyName>>
+    private lateinit var skipProperties: Set<Pair<String, String>>
+
     override fun configure(configs: Map<String, *>, isKey: Boolean) {
-        println("[JsonNodeConverter] Hello!")
+        println("[JsonNodeConverter] :: Hola! $configs")
+        skipProperties = configs[Config.SKIP_PROPERTIES]?.let { c ->
+            (c as String)
+                .split(';')
+                .map {
+                    val l = it.split('.')
+                    val p = if (l.size == 1) "" else '/' + l.dropLast(1).joinToString("/")
+                    p to l.last()
+                }.toSet()
+        } ?: emptySet()
     }
 
     override fun fromConnectData(topic: String, schema: Schema, value: Any): ByteArray {
-        val jsonNode = fromConnectDataToJsonNode(topic, schema, value)
+        val jsonNode: JsonNode = fromConnectDataToJsonNode(topic, schema, value)
         return om.writeValueAsBytes(jsonNode)
     }
 
@@ -32,13 +44,12 @@ class JsonNodeConverter : Converter {
     }
 
     fun fromConnectDataToJson(topic: String, schema: Schema, value: Any): String {
-        val jsonNode = fromConnectDataToJsonNode(topic, schema, value)
+        val jsonNode: JsonNode = fromConnectDataToJsonNode(topic, schema, value)
         return om.writeValueAsString(jsonNode)
     }
 
-    override fun toConnectData(topic: String, value: ByteArray): SchemaAndValue {
+    override fun toConnectData(topic: String, value: ByteArray): SchemaAndValue =
         error("[JsonNodeConverter] toConnectData method not supported")
-    }
 
     private fun Struct.toJsonNode(): JsonNode {
         // Create an empty [ObjectNode].
@@ -63,7 +74,20 @@ class JsonNodeConverter : Converter {
             }
         }
 
-        return node.deserializeJsonStringFields()
+        return node.skipProperties().deserializeJsonStringFields()
+    }
+
+    private fun ObjectNode.skipProperties(): ObjectNode = apply {
+        skipProperties.forEach {
+            if (it.first.isEmpty()) {
+                this.remove(it.second)
+            } else {
+                when (val n = this.at(it.first)) {
+                    is ObjectNode -> n.remove(it.second)
+                    else -> Unit
+                }
+            }
+        }
     }
 
     private fun JsonNode.deserializeJsonStringFields(): JsonNode = apply {
@@ -82,5 +106,9 @@ class JsonNodeConverter : Converter {
                 }
             }
         }
+    }
+
+    object Config {
+        const val SKIP_PROPERTIES: String = "json.exclude.properties"
     }
 }
