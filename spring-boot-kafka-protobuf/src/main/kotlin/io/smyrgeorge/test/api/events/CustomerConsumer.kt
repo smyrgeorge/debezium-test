@@ -1,5 +1,10 @@
 package io.smyrgeorge.test.api.events
 
+import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
+import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchemaProvider
+import io.confluent.kafka.serializers.protobuf.KafkaProtobufDeserializer
+import io.confluent.kafka.serializers.protobuf.KafkaProtobufSerializer
+import io.smyrgeorge.test.proto.domain.Customer.CustomerOuterClass
 import jakarta.annotation.PostConstruct
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
@@ -54,22 +59,21 @@ class CustomerConsumer {
         ReceiverOptions.create<ByteArray, ByteArray>(props)
             .subscription(setOf(topic))
 
+    private val schemaRegistryUrl = "http://localhost:58085"
+    private val schemaRegistryClient = CachedSchemaRegistryClient(
+        /* baseUrls = */ schemaRegistryUrl,
+        /* identityMapCapacity = */ 1000,
+        /* providers = */ listOf(ProtobufSchemaProvider()),
+        /* originals = */ emptyMap<String, Any>()
+    )
+
+    private val protobufSerializer = KafkaProtobufSerializer<CustomerOuterClass.Customer>(schemaRegistryClient)
+
+    private val protobufDeserializer = KafkaProtobufDeserializer<CustomerOuterClass.Customer>(schemaRegistryClient)
+
     @PostConstruct
     fun setup() {
         receiver()
-    }
-
-    data class Customer(
-        val id: Int,
-        val firstName: String,
-        val lastName: String,
-        val email: String,
-        val test: Test
-    ) {
-        data class Test(
-            val a: Int?,
-            val b: String
-        )
     }
 
     private fun receiver(): Disposable {
@@ -77,14 +81,6 @@ class CustomerConsumer {
         return kafkaFlux.subscribe { record ->
 
             val offset = record.receiverOffset()
-
-//            val input = avro.openInputStream(Customer.serializer()) {
-//                decodeFormat = AvroDecodeFormat.Binary(Customer.schema, Customer.schema)
-//            }.from(record.value())
-//            input.iterator().forEach {
-//                println(it)
-//            }
-//            input.close()
 
             log.info(
                 "Received message: topic-partition={} offset={} timestamp={} key={} value={}",
@@ -94,6 +90,8 @@ class CustomerConsumer {
                 record.key(),
                 record.value()
             )
+
+            val value: CustomerOuterClass.Customer = protobufDeserializer.deserialize(topic, record.value())
 
             offset.acknowledge()
         }

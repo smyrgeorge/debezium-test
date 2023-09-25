@@ -21,13 +21,15 @@ class ProtobufConverter : Converter {
     private var isKey: Boolean = false
     private lateinit var schemaRegistryUrl: String
     private var schemaRegistryCacheCapacity: Int = 1000
-    private lateinit var schemaRegistryClient: SchemaRegistryClient
+    private var autoRegisterSchemas: Boolean = false
+    private var useLatestVersion: Boolean = true
+
+    lateinit var schemaRegistryClient: SchemaRegistryClient
     private val subjectNameStrategy = TopicNameStrategy()
     private val jsonNodeConverter: JsonNodeConverter = JsonNodeConverter()
 
     // <subject, message protobuf descriptor>
-    private val schemaCache: MutableMap<String, Pair<Descriptors.Descriptor, ProtobufSchema>> =
-        BoundedConcurrentHashMap()
+    private val cache: MutableMap<String, Pair<Descriptors.Descriptor, ProtobufSchema>> = BoundedConcurrentHashMap()
     private lateinit var serializer: KafkaProtobufSerializer<DynamicMessage>
 
     override fun configure(configs: Map<String, *>, isKey: Boolean) {
@@ -40,8 +42,15 @@ class ProtobufConverter : Converter {
             ?: error("${Config.SCHEMA_REGISTRY_URL} config property was null.")
 
         configs[Config.SCHEMA_REGISTRY_CACHE_CAPACITY]?.let {
-            val value = if (it is String) it.toInt() else it as Int
-            schemaRegistryCacheCapacity = value
+            schemaRegistryCacheCapacity = if (it is String) it.toInt() else it as Int
+        }
+
+        configs[Config.AUTO_REGISTER_SCHEMAS]?.let {
+            autoRegisterSchemas = if (it is String) it.toBoolean() else it as Boolean
+        }
+
+        configs[Config.USE_LATEST_VERSION]?.let {
+            useLatestVersion = if (it is String) it.toBoolean() else it as Boolean
         }
 
         schemaRegistryClient = CachedSchemaRegistryClient(
@@ -51,10 +60,10 @@ class ProtobufConverter : Converter {
             /* originals = */ emptyMap<String, Any>()
         )
 
-        serializer = KafkaProtobufSerializer<DynamicMessage>(subjectNameStrategy, schemaCache).apply {
+        serializer = KafkaProtobufSerializer<DynamicMessage>(subjectNameStrategy, cache).apply {
             val conf = mapOf<String, Any>(
-                KafkaProtobufSerializerConfig.USE_LATEST_VERSION to true,
-                KafkaProtobufSerializerConfig.AUTO_REGISTER_SCHEMAS to false,
+                KafkaProtobufSerializerConfig.USE_LATEST_VERSION to useLatestVersion,
+                KafkaProtobufSerializerConfig.AUTO_REGISTER_SCHEMAS to autoRegisterSchemas,
                 KafkaProtobufSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG to schemaRegistryUrl,
             )
             configure(conf, isKey)
@@ -67,8 +76,6 @@ class ProtobufConverter : Converter {
     }
 
     fun fromConnectData(topic: String, json: String): ByteArray {
-        println("[ProtobufConverter]: $json")
-
         val descriptor: Descriptors.Descriptor = protoSchemaOf(topic).first
         val builder: DynamicMessage.Builder = DynamicMessage.newBuilder(descriptor)
         // TODO: remove ignoringUnknownFields()
@@ -79,7 +86,7 @@ class ProtobufConverter : Converter {
 
     private fun protoSchemaOf(topic: String): Pair<Descriptors.Descriptor, ProtobufSchema> {
         val subject = subjectNameStrategy.subjectName(topic, isKey, null)
-        val cached = schemaCache[subject]
+        val cached = cache[subject]
         // TODO: check if expired
         return if (cached != null) {
             cached
@@ -88,7 +95,7 @@ class ProtobufConverter : Converter {
             val schema = schemaRegistryClient.getSchemaBySubjectAndId(subject, meta.id) as ProtobufSchema
             val descriptor: Descriptors.Descriptor = schema.toDescriptor()
             val pair = descriptor to schema
-            schemaCache[subject] = pair
+            cache[subject] = pair
             pair
         }
     }
@@ -99,5 +106,7 @@ class ProtobufConverter : Converter {
     object Config {
         const val SCHEMA_REGISTRY_URL: String = "protobuf.schema.registry.url"
         const val SCHEMA_REGISTRY_CACHE_CAPACITY: String = "protobuf.schema.cache.capacity"
+        const val AUTO_REGISTER_SCHEMAS: String = "protobuf.auto.register.schemas"
+        const val USE_LATEST_VERSION: String = "protobuf.use.latest.version"
     }
 }

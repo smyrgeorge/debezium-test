@@ -15,7 +15,7 @@ class TestService {
 
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
 
-    private val schemaRegistryUrl = "http://localhost:58002/apis/ccompat/v7"
+    private val schemaRegistryUrl = "http://localhost:58085"
     private val schemaRegistryClient: CachedSchemaRegistryClient = CachedSchemaRegistryClient(schemaRegistryUrl, 10)
 
 

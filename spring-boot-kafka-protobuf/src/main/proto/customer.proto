@@ -1,5 +1,5 @@
 syntax = "proto3";
-package io.smyrgeorge.test.proto.domain.Customer;
+package io.smyrgeorge.test.proto.domain;
 
 message CustomerChangeEvent {
   optional Customer before = 1;

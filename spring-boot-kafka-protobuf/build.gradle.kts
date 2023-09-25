@@ -47,6 +47,7 @@ dependencies {
     implementation("io.projectreactor.kafka:reactor-kafka:1.3.20")
     implementation("io.confluent:kafka-protobuf-serializer:7.5.0")
     implementation("io.confluent:kafka-schema-registry-client:7.5.0")
+    implementation("io.confluent:kafka-protobuf-provider:7.5.0")
 
     // Protobuf
     implementation("com.google.protobuf:protobuf-kotlin:$protocVersion")
