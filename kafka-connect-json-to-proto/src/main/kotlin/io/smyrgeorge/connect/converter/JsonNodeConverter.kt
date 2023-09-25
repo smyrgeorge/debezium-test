@@ -1,10 +1,10 @@
-package io.smyrgeorge.test
+package io.smyrgeorge.connect.converter
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.NullNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.google.common.base.CaseFormat
-import io.smyrgeorge.test.util.ObjectMapperFactory
+import io.smyrgeorge.connect.util.ObjectMapperFactory
 import org.apache.kafka.connect.data.Schema
 import org.apache.kafka.connect.data.SchemaAndValue
 import org.apache.kafka.connect.data.Struct

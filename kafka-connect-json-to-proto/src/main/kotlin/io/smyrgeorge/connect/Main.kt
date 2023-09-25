@@ -1,7 +1,8 @@
-package io.smyrgeorge.test
+package io.smyrgeorge.connect
 
 import com.google.protobuf.DynamicMessage
 import io.confluent.kafka.serializers.protobuf.KafkaProtobufDeserializer
+import io.smyrgeorge.connect.converter.ProtobufConverter
 
 class Main
 

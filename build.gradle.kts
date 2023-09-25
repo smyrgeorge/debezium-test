@@ -2,6 +2,10 @@ group = "io.smyrgeorge.test"
 version = "0.1.0"
 
 val protocVersion: String by extra { "3.24.3" }
+val jacksonVersion: String by extra { "2.15.2" }
+val mockitoVersion: String by extra { "5.1.0" }
+val kafkaConnectVersion: String by extra { "3.5.1" }
+val kafkaConfluentVersion: String by extra { "7.5.0" }
 
 // Common plugin versions here.
 plugins {

@@ -1,4 +1,4 @@
-package io.smyrgeorge.test.util
+package io.smyrgeorge.connect.util
 
 import com.google.protobuf.Descriptors
 import com.google.protobuf.Message

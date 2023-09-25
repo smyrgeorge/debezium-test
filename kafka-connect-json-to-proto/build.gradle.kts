@@ -23,31 +23,30 @@ repositories {
 }
 
 val protocVersion: String by rootProject.extra
+val jacksonVersion: String by rootProject.extra
+val mockitoVersion: String by rootProject.extra
+val kafkaConnectVersion: String by rootProject.extra
+val kafkaConfluentVersion: String by rootProject.extra
 
 dependencies {
     // Kafka
     // https://mvnrepository.com/artifact/org.apache.kafka/connect-api
-    implementation("org.apache.kafka:connect-api:3.5.1")
-    implementation("org.apache.kafka:connect-transforms:3.5.1")
+    implementation("org.apache.kafka:connect-api:$kafkaConnectVersion")
     // https://packages.confluent.io/maven/io/confluent/kafka-schema-registry-client/
-    implementation("io.confluent:kafka-schema-registry-client:7.5.0")
-    implementation("io.confluent:kafka-protobuf-provider:7.5.0")
-    implementation("io.confluent:kafka-protobuf-serializer:7.5.0")
-
-    // Kotlin
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.0")
+    implementation("io.confluent:kafka-schema-registry-client:$kafkaConfluentVersion")
+    implementation("io.confluent:kafka-protobuf-serializer:$kafkaConfluentVersion")
 
     // Jackson
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2")
+    implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
 
     // Protobuf
     implementation("com.google.protobuf:protobuf-java:$protocVersion")
     implementation("com.google.protobuf:protobuf-java-util:$protocVersion")
 
     // https://github.com/mockito/mockito-kotlin
-    testImplementation("org.mockito.kotlin:mockito-kotlin:5.0.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:$mockitoVersion")
 }
 
 tasks.withType<KotlinCompile> {

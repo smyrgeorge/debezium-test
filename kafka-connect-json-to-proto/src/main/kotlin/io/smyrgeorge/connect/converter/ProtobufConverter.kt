@@ -1,4 +1,4 @@
-package io.smyrgeorge.test
+package io.smyrgeorge.connect.converter
 
 import com.google.protobuf.Descriptors
 import com.google.protobuf.DynamicMessage
@@ -11,7 +11,7 @@ import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchemaProvider
 import io.confluent.kafka.schemaregistry.utils.BoundedConcurrentHashMap
 import io.confluent.kafka.serializers.protobuf.KafkaProtobufSerializerConfig
 import io.confluent.kafka.serializers.subject.TopicNameStrategy
-import io.smyrgeorge.test.util.KafkaProtobufSerializer
+import io.smyrgeorge.connect.util.KafkaProtobufSerializer
 import org.apache.kafka.connect.data.Schema
 import org.apache.kafka.connect.data.SchemaAndValue
 import org.apache.kafka.connect.storage.Converter

@@ -10,8 +10,8 @@
     "database.dbname": "postgres",
     "topic.prefix": "dbserver1",
     "table.include.list": "inventory.customers",
-    "key.converter": "io.smyrgeorge.test.JsonNodeConverter",
-    "value.converter": "io.smyrgeorge.test.ProtobufConverter",
+    "key.converter": "io.smyrgeorge.connect.converter.JsonNodeConverter",
+    "value.converter": "io.smyrgeorge.connect.converter.ProtobufConverter",
     "value.converter.protobuf.schema.registry.url": "http://schema-registry:8085",
     "value.converter.protobuf.schema.cache.capacity": 100
   }
