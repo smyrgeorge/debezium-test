@@ -1,16 +1,15 @@
 package io.smyrgeorge.test.domain
 
-import io.smyrgeorge.test.domain.dbz.Dbz
 import io.smyrgeorge.test.domain.dbz.Source
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoBuf
+import kotlinx.serialization.protobuf.ProtoBuf.Default.decodeFromByteArray
 import kotlinx.serialization.protobuf.ProtoNumber
 import io.smyrgeorge.test.domain.dbz.ChangeEvent as DbzChangeEvent
 
 @Serializable
 @OptIn(ExperimentalSerializationApi::class)
-@Dbz(topic = "dbserver1.inventory.customers")
 data class Customer(
     @ProtoNumber(1)
     val id: Int,
@@ -32,5 +31,10 @@ data class Customer(
 
         override fun toProtoBuf(): ByteArray =
             ProtoBuf.encodeToByteArray(serializer(), this)
+
+        companion object {
+            fun from(bytes: ByteArray): ChangeEvent =
+                decodeFromByteArray(serializer(), bytes)
+        }
     }
 }

@@ -4,7 +4,7 @@ import com.google.protobuf.DynamicMessage
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
 import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchemaProvider
 import io.confluent.kafka.serializers.protobuf.KafkaProtobufDeserializer
-import io.smyrgeorge.test.proto.domain.CustomerOuterClass
+import io.smyrgeorge.test.domain.Customer
 import jakarta.annotation.PostConstruct
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
@@ -91,7 +91,8 @@ class CustomerConsumer {
             )
 
             val value: DynamicMessage = protobufDeserializer.deserialize(topic, record.value())
-            val customer = CustomerOuterClass.CustomerChangeEvent.parseFrom(value.toByteArray())
+            val customer = Customer.ChangeEvent.from(value.toByteArray())
+//            val customer = CustomerOuterClass.CustomerChangeEvent.parseFrom(value.toByteArray())
             log.info("Received customer: $customer")
             offset.acknowledge()
         }
