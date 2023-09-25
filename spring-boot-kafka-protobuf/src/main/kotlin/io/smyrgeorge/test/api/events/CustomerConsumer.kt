@@ -1,10 +1,10 @@
 package io.smyrgeorge.test.api.events
 
+import com.google.protobuf.DynamicMessage
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
 import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchemaProvider
 import io.confluent.kafka.serializers.protobuf.KafkaProtobufDeserializer
-import io.confluent.kafka.serializers.protobuf.KafkaProtobufSerializer
-import io.smyrgeorge.test.proto.domain.Customer.CustomerOuterClass
+import io.smyrgeorge.test.proto.domain.CustomerOuterClass
 import jakarta.annotation.PostConstruct
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
@@ -67,9 +67,8 @@ class CustomerConsumer {
         /* originals = */ emptyMap<String, Any>()
     )
 
-    private val protobufSerializer = KafkaProtobufSerializer<CustomerOuterClass.Customer>(schemaRegistryClient)
-
-    private val protobufDeserializer = KafkaProtobufDeserializer<CustomerOuterClass.Customer>(schemaRegistryClient)
+    //    private val protobufSerializer = KafkaProtobufSerializer<CustomerOuterClass.Customer>(schemaRegistryClient)
+    private val protobufDeserializer = KafkaProtobufDeserializer<DynamicMessage>(schemaRegistryClient)
 
     @PostConstruct
     fun setup() {
@@ -91,8 +90,9 @@ class CustomerConsumer {
                 record.value()
             )
 
-            val value: CustomerOuterClass.Customer = protobufDeserializer.deserialize(topic, record.value())
-
+            val value: DynamicMessage = protobufDeserializer.deserialize(topic, record.value())
+            val customer = CustomerOuterClass.CustomerChangeEvent.parseFrom(value.toByteArray())
+            log.info("Received customer: $customer")
             offset.acknowledge()
         }
     }

@@ -4,7 +4,7 @@ import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
 import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchema
 import io.confluent.kafka.serializers.protobuf.KafkaProtobufDeserializer
 import io.confluent.kafka.serializers.protobuf.KafkaProtobufSerializer
-import io.smyrgeorge.test.proto.domain.Customer.CustomerOuterClass
+import io.smyrgeorge.test.proto.domain.CustomerOuterClass
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -17,7 +17,6 @@ class TestService {
 
     private val schemaRegistryUrl = "http://localhost:58085"
     private val schemaRegistryClient: CachedSchemaRegistryClient = CachedSchemaRegistryClient(schemaRegistryUrl, 10)
-
 
     private val protobufSerializer = KafkaProtobufSerializer<CustomerOuterClass.Customer>(schemaRegistryClient)
     private val protobufDeserializer = KafkaProtobufDeserializer<CustomerOuterClass.Customer>(schemaRegistryClient)
