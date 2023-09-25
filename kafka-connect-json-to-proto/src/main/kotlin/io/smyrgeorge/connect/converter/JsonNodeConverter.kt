@@ -74,15 +74,17 @@ class JsonNodeConverter : Converter {
             }
         }
 
-        return node.skipProperties().deserializeJsonStringFields()
+        return node
+            .skipProperties()
+            .deserializeJsonStringFields()
     }
 
     private fun ObjectNode.skipProperties(): ObjectNode = apply {
         skipProperties.forEach {
             if (it.first.isEmpty()) {
-                this.remove(it.second)
+                remove(it.second)
             } else {
-                when (val n = this.at(it.first)) {
+                when (val n = at(it.first)) {
                     is ObjectNode -> n.remove(it.second)
                     else -> Unit
                 }
