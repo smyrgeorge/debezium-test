@@ -98,11 +98,10 @@ class CustomerConsumer {
                 record.value()
             )
 
-            val bytes: ByteArray = record.value()
-            val value = protobufDeserializer.deserialize(topic, bytes)
+            val customer = protobufDeserializer.deserialize(topic, record.value() as ByteArray)
 //            val customer = Customer.ChangeEvent.from(value.toByteArray())
 //            val customer = CustomerOuterClass.CustomerChangeEvent.parseFrom(value.toByteArray())
-            log.info("Received customer: $value")
+            log.info("Received customer: $customer")
             offset.acknowledge()
         }
     }
