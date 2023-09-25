@@ -1,7 +1,6 @@
 package io.smyrgeorge.test.service
 
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
-import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchema
 import io.confluent.kafka.serializers.protobuf.KafkaProtobufDeserializer
 import io.confluent.kafka.serializers.protobuf.KafkaProtobufSerializer
 import io.smyrgeorge.test.proto.domain.CustomerOuterClass
@@ -21,10 +20,10 @@ class TestService {
     private val protobufSerializer = KafkaProtobufSerializer<CustomerOuterClass.Customer>(schemaRegistryClient)
     private val protobufDeserializer = KafkaProtobufDeserializer<CustomerOuterClass.Customer>(schemaRegistryClient)
 
-    init {
-        val protobufSchema = ProtobufSchema(CustomerOuterClass.getDescriptor())
-        schemaRegistryClient.register("customer", protobufSchema)
-    }
+//    init {
+//        val protobufSchema = ProtobufSchema(CustomerOuterClass.getDescriptor())
+//        schemaRegistryClient.register("customer", protobufSchema)
+//    }
 
     suspend fun test() {
         log.info("Hola!")
