@@ -1,10 +1,10 @@
 package io.smyrgeorge.test.api.events
 
-import com.google.protobuf.DynamicMessage
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
 import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchemaProvider
 import io.confluent.kafka.serializers.protobuf.KafkaProtobufDeserializer
-import io.smyrgeorge.test.domain.Customer
+import io.confluent.kafka.serializers.protobuf.KafkaProtobufDeserializerConfig
+import io.smyrgeorge.test.proto.domain.CustomerOuterClass
 import jakarta.annotation.PostConstruct
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
@@ -67,8 +67,16 @@ class CustomerConsumer {
         /* originals = */ emptyMap<String, Any>()
     )
 
-    //    private val protobufSerializer = KafkaProtobufSerializer<CustomerOuterClass.Customer>(schemaRegistryClient)
-    private val protobufDeserializer = KafkaProtobufDeserializer<DynamicMessage>(schemaRegistryClient)
+    private val protobufDeserializer =
+        KafkaProtobufDeserializer<CustomerOuterClass.CustomerChangeEvent>(schemaRegistryClient).apply {
+            val conf = mapOf<String, Any>(
+                KafkaProtobufDeserializerConfig.USE_LATEST_VERSION to true,
+                KafkaProtobufDeserializerConfig.AUTO_REGISTER_SCHEMAS to false,
+                KafkaProtobufDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG to schemaRegistryUrl,
+                KafkaProtobufDeserializerConfig.SPECIFIC_PROTOBUF_VALUE_TYPE to CustomerOuterClass.CustomerChangeEvent::class.java
+            )
+            configure(conf, false)
+        }
 
     @PostConstruct
     fun setup() {
@@ -90,10 +98,11 @@ class CustomerConsumer {
                 record.value()
             )
 
-            val value: DynamicMessage = protobufDeserializer.deserialize(topic, record.value())
-            val customer = Customer.ChangeEvent.from(value.toByteArray())
+            val bytes: ByteArray = record.value()
+            val value = protobufDeserializer.deserialize(topic, bytes)
+//            val customer = Customer.ChangeEvent.from(value.toByteArray())
 //            val customer = CustomerOuterClass.CustomerChangeEvent.parseFrom(value.toByteArray())
-            log.info("Received customer: $customer")
+            log.info("Received customer: $value")
             offset.acknowledge()
         }
     }
