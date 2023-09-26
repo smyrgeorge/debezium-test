@@ -23,7 +23,7 @@ class JsonNodeConverter : Converter {
         println("[JsonNodeConverter] :: Hola! $configs")
         skipProperties = configs[Config.SKIP_PROPERTIES]?.let { c ->
             (c as String)
-                .split(';')
+                .split(',')
                 .map {
                     val l = it.split('.')
                     val p = if (l.size == 1) "" else '/' + l.dropLast(1).joinToString("/")
@@ -69,8 +69,10 @@ class JsonNodeConverter : Converter {
                 is BigDecimal -> node.put(name, v)
                 is String -> node.put(name, v)
                 is Boolean -> node.put(name, v)
+                is ByteArray -> node.put(name, v)
                 is Struct -> node.set(name, v.toJsonNode())
-                else -> error("Cannot map Struct to JsonNode. Value was $v")
+                is Map<*, *>, is List<*>, is Set<*>, is Array<*> -> node.set(name, om.valueToTree(v))
+                else -> error("Cannot map ${v::class.simpleName} to JsonNode.")
             }
         }
 

@@ -1,17 +1,16 @@
 package io.smyrgeorge.connect.util
 
-import com.google.protobuf.Descriptors
 import com.google.protobuf.Message
-import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchema
 import io.confluent.kafka.serializers.protobuf.AbstractKafkaProtobufSerializer
 import io.confluent.kafka.serializers.protobuf.KafkaProtobufSerializerConfig
 import io.confluent.kafka.serializers.subject.strategy.SubjectNameStrategy
+import io.smyrgeorge.connect.converter.Cache
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.Serializer
 
 class KafkaProtobufSerializer<T : Message>(
     private val subjectNameStrategy: SubjectNameStrategy,
-    private val schemaCache: Map<String, Pair<Descriptors.Descriptor, ProtobufSchema>>,
+    private val schemaCache: Cache,
 ) : AbstractKafkaProtobufSerializer<T>(), Serializer<T> {
 
     override fun configure(configs: Map<String, *>, isKey: Boolean) {

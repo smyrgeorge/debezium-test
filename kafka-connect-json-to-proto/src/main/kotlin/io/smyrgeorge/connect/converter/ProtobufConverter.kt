@@ -15,32 +15,37 @@ import io.smyrgeorge.connect.util.KafkaProtobufSerializer
 import org.apache.kafka.connect.data.Schema
 import org.apache.kafka.connect.data.SchemaAndValue
 import org.apache.kafka.connect.storage.Converter
+import java.time.Duration
+import java.time.Instant
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.toJavaDuration
+
+typealias Cache = MutableMap<String, Triple<Descriptors.Descriptor, ProtobufSchema, Instant>>
 
 class ProtobufConverter : Converter {
 
     private var isKey: Boolean = false
+    private var useLatestVersion: Boolean = false
     private lateinit var schemaRegistryUrl: String
     private var schemaRegistryCacheCapacity: Int = 1000
-    private var autoRegisterSchemas: Boolean = false
-    private var useLatestVersion: Boolean = true
+    private var schemaRegistryCacheExpiryMinutes: Duration = 10.minutes.toJavaDuration()
 
-    lateinit var schemaRegistryClient: SchemaRegistryClient
     private val subjectNameStrategy = TopicNameStrategy()
-    val jsonNodeConverter: JsonNodeConverter = JsonNodeConverter()
+    lateinit var schemaRegistryClient: SchemaRegistryClient
+    private val jsonNodeConverter: JsonNodeConverter = JsonNodeConverter()
 
-    // <subject, message protobuf descriptor>
-    private val cache: MutableMap<String, Pair<Descriptors.Descriptor, ProtobufSchema>> = BoundedConcurrentHashMap()
+    // <subject, triple<message protobuf descriptor, schema, expiry>>
+    private val cache: Cache = BoundedConcurrentHashMap()
     private lateinit var serializer: KafkaProtobufSerializer<DynamicMessage>
 
     override fun configure(configs: Map<String, *>, isKey: Boolean) {
         println("[ProtobufConverter] :: Hola! $configs")
 
-        val jsonProps = configs[Config.SKIP_PROPERTIES]?.let {
-            mapOf(JsonNodeConverter.Config.SKIP_PROPERTIES to it as String)
-        } ?: emptyMap()
-        jsonNodeConverter.configure(jsonProps, isKey)
-
         this.isKey = isKey
+
+        configs[Config.USE_LATEST_VERSION]?.let {
+            useLatestVersion = if (it is String) it.toBoolean() else it as Boolean
+        }
 
         schemaRegistryUrl = configs[Config.SCHEMA_REGISTRY_URL] as String?
             ?: error("${Config.SCHEMA_REGISTRY_URL} config property was null.")
@@ -49,13 +54,15 @@ class ProtobufConverter : Converter {
             schemaRegistryCacheCapacity = if (it is String) it.toInt() else it as Int
         }
 
-        configs[Config.AUTO_REGISTER_SCHEMAS]?.let {
-            autoRegisterSchemas = if (it is String) it.toBoolean() else it as Boolean
+        configs[Config.SCHEMA_REGISTRY_CACHE_EXPIRY_MINUTES]?.let {
+            schemaRegistryCacheExpiryMinutes =
+                if (it is String) it.toInt().minutes.toJavaDuration() else (it as Int).minutes.toJavaDuration()
         }
 
-        configs[Config.USE_LATEST_VERSION]?.let {
-            useLatestVersion = if (it is String) it.toBoolean() else it as Boolean
-        }
+        val jsonProps = configs[Config.SKIP_PROPERTIES]?.let {
+            mapOf(JsonNodeConverter.Config.SKIP_PROPERTIES to it as String)
+        } ?: emptyMap()
+        jsonNodeConverter.configure(jsonProps, isKey)
 
         schemaRegistryClient = CachedSchemaRegistryClient(
             /* baseUrls = */ schemaRegistryUrl,
@@ -66,8 +73,8 @@ class ProtobufConverter : Converter {
 
         serializer = KafkaProtobufSerializer<DynamicMessage>(subjectNameStrategy, cache).apply {
             val conf = mapOf<String, Any>(
+                KafkaProtobufSerializerConfig.AUTO_REGISTER_SCHEMAS to false,
                 KafkaProtobufSerializerConfig.USE_LATEST_VERSION to useLatestVersion,
-                KafkaProtobufSerializerConfig.AUTO_REGISTER_SCHEMAS to autoRegisterSchemas,
                 KafkaProtobufSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG to schemaRegistryUrl,
             )
             configure(conf, isKey)
@@ -87,19 +94,28 @@ class ProtobufConverter : Converter {
         return serializer.serialize(topic, message)
     }
 
-    private fun protoSchemaOf(topic: String): Pair<Descriptors.Descriptor, ProtobufSchema> {
+    private fun protoSchemaOf(topic: String): Triple<Descriptors.Descriptor, ProtobufSchema, Instant> {
+
+        fun Instant.isExpired(): Boolean =
+            isAfter(Instant.now().plus(schemaRegistryCacheExpiryMinutes))
+
         val subject = subjectNameStrategy.subjectName(topic, isKey, null)
-        val cached = cache[subject]
-        // TODO: check if expired
+
+        var cached = cache[subject]
+        if (cached != null && cached.third.isExpired()) {
+            cached = null
+            cache.remove(subject)
+        }
+
         return if (cached != null) {
             cached
         } else {
             val meta: SchemaMetadata = schemaRegistryClient.getLatestSchemaMetadata(subject)
             val schema = schemaRegistryClient.getSchemaBySubjectAndId(subject, meta.id) as ProtobufSchema
             val descriptor: Descriptors.Descriptor = schema.toDescriptor()
-            val pair = descriptor to schema
-            cache[subject] = pair
-            pair
+            val triple = Triple(descriptor, schema, Instant.now())
+            cache[subject] = triple
+            triple
         }
     }
 
@@ -109,7 +125,7 @@ class ProtobufConverter : Converter {
     object Config {
         const val SCHEMA_REGISTRY_URL: String = "protobuf.schema.registry.url"
         const val SCHEMA_REGISTRY_CACHE_CAPACITY: String = "protobuf.schema.cache.capacity"
-        const val AUTO_REGISTER_SCHEMAS: String = "protobuf.auto.register.schemas"
+        const val SCHEMA_REGISTRY_CACHE_EXPIRY_MINUTES: String = "protobuf.schema.cache.expiry.minutes"
         const val USE_LATEST_VERSION: String = "protobuf.use.latest.version"
         const val SKIP_PROPERTIES: String = "protobuf.json.exclude.properties"
     }

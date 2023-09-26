@@ -1,5 +1,5 @@
 {
-  "name": "inventory-connector",
+  "name": "inventory-customers-connector",
   "config": {
     "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
     "tasks.max": "1",
@@ -14,6 +14,6 @@
     "value.converter": "io.smyrgeorge.connect.converter.ProtobufConverter",
     "value.converter.protobuf.schema.registry.url": "http://schema-registry:8085",
     "value.converter.protobuf.schema.cache.capacity": 100,
-    "value.converter.protobuf.json.exclude.properties": "transaction;source.tsMs;source.snapshot;source.sequence;source.txid;source.lsn;source.xmin"
+    "value.converter.protobuf.json.exclude.properties": "transaction,source.tsMs,source.snapshot,source.sequence,source.txid,source.lsn,source.xmin"
   }
 }
