@@ -15,6 +15,8 @@ import io.smyrgeorge.connect.util.KafkaProtobufSerializer
 import org.apache.kafka.connect.data.Schema
 import org.apache.kafka.connect.data.SchemaAndValue
 import org.apache.kafka.connect.storage.Converter
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.time.Instant
 import kotlin.time.Duration.Companion.minutes
@@ -24,22 +26,26 @@ typealias Cache = MutableMap<String, Triple<Descriptors.Descriptor, ProtobufSche
 
 class ProtobufConverter : Converter {
 
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
+
     private var isKey: Boolean = false
     private var useLatestVersion: Boolean = false
     private lateinit var schemaRegistryUrl: String
     private var schemaRegistryCacheCapacity: Int = 1000
     private var schemaRegistryCacheExpiryMinutes: Duration = 10.minutes.toJavaDuration()
-
     private val subjectNameStrategy = TopicNameStrategy()
     lateinit var schemaRegistryClient: SchemaRegistryClient
-    private val jsonNodeConverter: JsonNodeConverter = JsonNodeConverter()
+    private val jsonNodeConverter = JsonNodeConverter()
 
     // <subject, triple<message protobuf descriptor, schema, expiry>>
     private val cache: Cache = BoundedConcurrentHashMap()
     private lateinit var serializer: KafkaProtobufSerializer<DynamicMessage>
 
     override fun configure(configs: Map<String, *>, isKey: Boolean) {
-        println("[ProtobufConverter] :: Hola! $configs")
+        log.info("Hola! from ProtobufConverter! :: $configs")
+
+        // Configure [JsonNodeConverter].
+        jsonNodeConverter.configure(configs.toJsonNodeConverterProps(), isKey)
 
         this.isKey = isKey
 
@@ -55,14 +61,9 @@ class ProtobufConverter : Converter {
         }
 
         configs[Config.SCHEMA_REGISTRY_CACHE_EXPIRY_MINUTES]?.let {
-            schemaRegistryCacheExpiryMinutes =
-                if (it is String) it.toInt().minutes.toJavaDuration() else (it as Int).minutes.toJavaDuration()
+            val value = if (it is String) it.toInt().minutes else (it as Int).minutes
+            schemaRegistryCacheExpiryMinutes = value.toJavaDuration()
         }
-
-        val jsonProps = configs[Config.SKIP_PROPERTIES]?.let {
-            mapOf(JsonNodeConverter.Config.SKIP_PROPERTIES to it as String)
-        } ?: emptyMap()
-        jsonNodeConverter.configure(jsonProps, isKey)
 
         schemaRegistryClient = CachedSchemaRegistryClient(
             /* baseUrls = */ schemaRegistryUrl,
@@ -120,7 +121,17 @@ class ProtobufConverter : Converter {
     }
 
     override fun toConnectData(topic: String, value: ByteArray): SchemaAndValue =
-        error("[ProtobufConverter] :: toConnectData method not supported")
+        error("ProtobufConverter :: toConnectData method not supported")
+
+    private fun Map<String, *>.toJsonNodeConverterProps(): Map<String, *> {
+        val configs: MutableMap<String, Any> = mutableMapOf()
+
+        this[Config.SKIP_PROPERTIES]?.let {
+            configs[JsonNodeConverter.Config.SKIP_PROPERTIES] = it as String
+        }
+
+        return configs
+    }
 
     object Config {
         const val SCHEMA_REGISTRY_URL: String = "protobuf.schema.registry.url"

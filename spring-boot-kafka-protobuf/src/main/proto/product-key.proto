@@ -1,0 +1,6 @@
+syntax = "proto3";
+package io.smyrgeorge.test.proto.domain;
+
+message ProductKey {
+  int32 id = 1;
+}

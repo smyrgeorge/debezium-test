@@ -10,10 +10,10 @@
     "database.dbname": "postgres",
     "topic.prefix": "dbserver1",
     "table.include.list": "inventory.customers,inventory.products",
-    "key.converter": "io.smyrgeorge.connect.converter.JsonNodeConverter",
+    "key.converter": "io.smyrgeorge.connect.converter.ProtobufConverter",
+    "key.converter.protobuf.schema.registry.url": "http://schema-registry:8085",
     "value.converter": "io.smyrgeorge.connect.converter.ProtobufConverter",
     "value.converter.protobuf.schema.registry.url": "http://schema-registry:8085",
-    "value.converter.protobuf.schema.cache.capacity": 100,
     "value.converter.protobuf.json.exclude.properties": "transaction,source.tsMs,source.snapshot,source.sequence,source.txid,source.lsn,source.xmin"
   }
 }

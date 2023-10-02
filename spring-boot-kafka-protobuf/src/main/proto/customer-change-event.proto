@@ -1,0 +1,13 @@
+syntax = "proto3";
+package io.smyrgeorge.test.proto.domain;
+
+import "customer.proto";
+import "source.proto";
+
+message CustomerChangeEvent {
+  optional Customer before = 1;
+  optional Customer after = 2;
+  Source source = 3;
+  string op = 4;
+  int64 tsMs = 5;
+}

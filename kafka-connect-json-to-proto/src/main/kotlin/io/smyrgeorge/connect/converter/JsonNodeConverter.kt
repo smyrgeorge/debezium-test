@@ -9,18 +9,21 @@ import org.apache.kafka.connect.data.Schema
 import org.apache.kafka.connect.data.SchemaAndValue
 import org.apache.kafka.connect.data.Struct
 import org.apache.kafka.connect.storage.Converter
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.math.BigDecimal
 import java.math.BigInteger
 
 class JsonNodeConverter : Converter {
 
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
     private val om = ObjectMapperFactory.createCamelCase()
 
     // set<pair<path, propertyName>>
     private lateinit var skipProperties: Set<Pair<String, String>>
 
     override fun configure(configs: Map<String, *>, isKey: Boolean) {
-        println("[JsonNodeConverter] :: Hola! $configs")
+        log.info("Hola from JsonNodeConverter! :: $configs")
         skipProperties = configs[Config.SKIP_PROPERTIES]?.let { c ->
             (c as String)
                 .split(',')
@@ -37,7 +40,7 @@ class JsonNodeConverter : Converter {
         return om.writeValueAsBytes(jsonNode)
     }
 
-    @Suppress("UNUSED_PARAMETER")
+    @Suppress("UNUSED_PARAMETER", "MemberVisibilityCanBePrivate")
     fun fromConnectDataToJsonNode(topic: String, schema: Schema, value: Any): JsonNode {
         value as Struct
         return value.toJsonNode()
@@ -49,7 +52,7 @@ class JsonNodeConverter : Converter {
     }
 
     override fun toConnectData(topic: String, value: ByteArray): SchemaAndValue =
-        error("[JsonNodeConverter] toConnectData method not supported")
+        error("JsonNodeConverter :: toConnectData method not supported")
 
     private fun Struct.toJsonNode(): JsonNode {
         // Create an empty [ObjectNode].

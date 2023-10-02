@@ -45,6 +45,9 @@ dependencies {
     implementation("com.google.protobuf:protobuf-java:$protocVersion")
     implementation("com.google.protobuf:protobuf-java-util:$protocVersion")
 
+    // Logging
+    compileOnly("org.slf4j:slf4j-api:2.0.9")
+
     // https://github.com/mockito/mockito-kotlin
     testImplementation("org.mockito.kotlin:mockito-kotlin:$mockitoVersion")
 }

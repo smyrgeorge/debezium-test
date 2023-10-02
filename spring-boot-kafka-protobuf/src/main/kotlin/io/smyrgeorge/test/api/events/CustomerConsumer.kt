@@ -4,7 +4,7 @@ import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
 import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchemaProvider
 import io.confluent.kafka.serializers.protobuf.KafkaProtobufDeserializer
 import io.confluent.kafka.serializers.protobuf.KafkaProtobufDeserializerConfig
-import io.smyrgeorge.test.proto.domain.CustomerOuterClass
+import io.smyrgeorge.test.proto.domain.CustomerChangeEventOuterClass.CustomerChangeEvent
 import jakarta.annotation.PostConstruct
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
@@ -68,12 +68,12 @@ class CustomerConsumer {
     )
 
     private val protobufDeserializer =
-        KafkaProtobufDeserializer<CustomerOuterClass.CustomerChangeEvent>(schemaRegistryClient).apply {
+        KafkaProtobufDeserializer<CustomerChangeEvent>(schemaRegistryClient).apply {
             val conf = mapOf<String, Any>(
                 KafkaProtobufDeserializerConfig.USE_LATEST_VERSION to true,
                 KafkaProtobufDeserializerConfig.AUTO_REGISTER_SCHEMAS to false,
                 KafkaProtobufDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG to schemaRegistryUrl,
-                KafkaProtobufDeserializerConfig.SPECIFIC_PROTOBUF_VALUE_TYPE to CustomerOuterClass.CustomerChangeEvent::class.java
+                KafkaProtobufDeserializerConfig.SPECIFIC_PROTOBUF_VALUE_TYPE to CustomerChangeEvent::class.java
             )
             configure(conf, false)
         }

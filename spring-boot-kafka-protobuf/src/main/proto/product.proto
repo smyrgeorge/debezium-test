@@ -3,9 +3,9 @@ package io.smyrgeorge.test.proto.domain;
 
 import "source.proto";
 
-message Customer {
+message Product {
   int32 id = 1;
-  string firstName = 2;
-  string lastName = 3;
-  string email = 4;
+  string name = 2;
+  string description = 3;
+  float weight = 4;
 }
