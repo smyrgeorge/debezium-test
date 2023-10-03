@@ -4,6 +4,7 @@ import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
 import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchemaProvider
 import io.confluent.kafka.serializers.protobuf.KafkaProtobufDeserializer
 import io.confluent.kafka.serializers.protobuf.KafkaProtobufDeserializerConfig
+import io.smyrgeorge.test.domain.Customer
 import io.smyrgeorge.test.proto.domain.CustomerChangeEventOuterClass.CustomerChangeEvent
 import jakarta.annotation.PostConstruct
 import org.apache.kafka.clients.consumer.ConsumerConfig
@@ -98,9 +99,8 @@ class CustomerConsumer {
                 record.value()
             )
 
-            val customer = protobufDeserializer.deserialize(topic, record.value() as ByteArray)
-//            val customer = Customer.ChangeEvent.from(value.toByteArray())
-//            val customer = CustomerOuterClass.CustomerChangeEvent.parseFrom(value.toByteArray())
+            val customer: CustomerChangeEvent = protobufDeserializer.deserialize(topic, record.value() as ByteArray)
+            val c1 = Customer.ChangeEvent.from(customer.toByteArray())
             log.info("Received customer: $customer")
             offset.acknowledge()
         }

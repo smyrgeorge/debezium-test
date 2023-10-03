@@ -14,6 +14,8 @@
     "key.converter.protobuf.schema.registry.url": "http://schema-registry:8085",
     "value.converter": "io.smyrgeorge.connect.converter.ProtobufConverter",
     "value.converter.protobuf.schema.registry.url": "http://schema-registry:8085",
-    "value.converter.protobuf.json.exclude.properties": "transaction,source.tsMs,source.snapshot,source.sequence,source.txid,source.lsn,source.xmin"
+    "value.converter.protobuf.json.exclude.properties": "transaction,source.tsMs,source.snapshot,source.sequence,source.txid,source.lsn,source.xmin",
+    "value.converter.protobuf.json.convert.dates.with.prefix": "date",
+    "value.converter.protobuf.json.convert.dates.mode": "FROM_UNIX_MICROSECONDS_TO_RFC_3339"
   }
 }

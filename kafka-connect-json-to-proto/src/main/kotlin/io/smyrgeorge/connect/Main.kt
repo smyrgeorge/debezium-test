@@ -2,12 +2,17 @@ package io.smyrgeorge.connect
 
 import com.google.protobuf.DynamicMessage
 import io.confluent.kafka.serializers.protobuf.KafkaProtobufDeserializer
+import io.smyrgeorge.connect.converter.JsonNodeConverter
 import io.smyrgeorge.connect.converter.ProtobufConverter
 import org.intellij.lang.annotations.Language
 
 class Main
 
 fun main() {
+    val micros = 1696273647694046
+    val date = JsonNodeConverter.DateConvertor.fromUnixMicrosToRfc3339(micros)
+    println(date)
+
     val c = ProtobufConverter().apply {
         val configs = mapOf(
             ProtobufConverter.Config.SCHEMA_REGISTRY_URL to "http://localhost:58085",
@@ -27,13 +32,15 @@ fun main() {
         		"id": 1001,
         		"firstName": "Sally",
         		"lastName": "Thomas",
-        		"email": "sally.thomas@acme.comm"
+        		"email": "sally.thomas@acme.comm",
+                "dateCreated": "2023-10-02T19:07:27.694Z"
         	},
         	"after": {
         		"id": 1001,
         		"firstName": "Sally",
         		"lastName": "Thomas",
-        		"email": "sally.thomas@acme.com"
+        		"email": "sally.thomas@acme.com",
+                "dateCreated": "2023-10-02T19:07:27.694Z"
         	},
         	"source": {
         		"version": "2.4.0.Beta2",

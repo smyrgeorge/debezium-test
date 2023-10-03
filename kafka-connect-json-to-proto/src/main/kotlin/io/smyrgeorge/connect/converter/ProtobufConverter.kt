@@ -127,7 +127,19 @@ class ProtobufConverter : Converter {
         val configs: MutableMap<String, Any> = mutableMapOf()
 
         this[Config.SKIP_PROPERTIES]?.let {
-            configs[JsonNodeConverter.Config.SKIP_PROPERTIES] = it as String
+            configs[JsonNodeConverter.Config.SKIP_PROPERTIES] = it
+        }
+
+        this[Config.CONVERT_DATES_MODE]?.let {
+            configs[JsonNodeConverter.Config.CONVERT_DATES_MODE] = it
+        }
+
+        this[Config.CONVERT_DATES_WITH_PREFIX]?.let {
+            configs[JsonNodeConverter.Config.CONVERT_DATES_WITH_PREFIX] = it
+        }
+
+        this[Config.CONVERT_DATES_WITH_SUFFIX]?.let {
+            configs[JsonNodeConverter.Config.CONVERT_DATES_WITH_SUFFIX] = it
         }
 
         return configs
@@ -138,6 +150,10 @@ class ProtobufConverter : Converter {
         const val SCHEMA_REGISTRY_CACHE_CAPACITY: String = "protobuf.schema.cache.capacity"
         const val SCHEMA_REGISTRY_CACHE_EXPIRY_MINUTES: String = "protobuf.schema.cache.expiry.minutes"
         const val USE_LATEST_VERSION: String = "protobuf.use.latest.version"
+
         const val SKIP_PROPERTIES: String = "protobuf.json.exclude.properties"
+        const val CONVERT_DATES_MODE: String = "protobuf.json.convert.dates.mode"
+        const val CONVERT_DATES_WITH_PREFIX: String = "protobuf.json.convert.dates.with.prefix"
+        const val CONVERT_DATES_WITH_SUFFIX: String = "protobuf.json.convert.dates.with.suffix"
     }
 }

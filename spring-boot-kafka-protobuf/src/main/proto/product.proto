@@ -1,11 +1,12 @@
 syntax = "proto3";
 package io.smyrgeorge.test.proto.domain;
 
-import "source.proto";
+import "google/protobuf/timestamp.proto";
 
 message Product {
   int32 id = 1;
   string name = 2;
   string description = 3;
   float weight = 4;
+  google.protobuf.Timestamp dateCreated = 5;
 }
